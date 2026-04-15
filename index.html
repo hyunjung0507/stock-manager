@@ -841,7 +841,7 @@ a { color: inherit; text-decoration: none; }
    설정
 ══════════════════════════════════════ */
 const CFG = {
-  GAS_URL:      'https://script.google.com/macros/s/AKfycbwYYoyHIGN_tub7tZA7sXDpE5ZVqFQJfXe9Iek_QECszLPVvmRo25dJ6UMw_rlrhOLA/exec',
+  GAS_URL:      'https://script.google.com/macros/s/AKfycbxIaP68xXJpWcZI1QUfA4XHkcWGA_g7HJH46cc3n46a4pEUgub3iGCnSHiYvYCruhQC/exec',
   SHEET_ID:     '1PVSCbRmt_up1TKLjgL7qqlCgRoWV_EjGvMg2w4z03Eg',
   PARTS_FOLDER: '1YBC5eUWRz5wy9vfeeKkwH86bbQem1WaX',
   REF_FOLDER:   '1eBa9IOs9CFSMuV_E89jsJVMa2Hi2P5JJ',
@@ -888,8 +888,7 @@ function doLogin() {
     document.getElementById('login-page').style.display = 'none';
     document.getElementById('main-app').classList.remove('hidden');
     // 이름 입력 모달 (간이)
-    const name = prompt('이름을 입력하세요 (처음 접속 시 관리자로 등록)') || '사용자';
-    loginAs(name);
+    loginAs('__pw_verified__');
   } else {
     const err = document.getElementById('login-err');
     err.textContent = '비밀번호가 올바르지 않습니다.';
@@ -898,22 +897,79 @@ function doLogin() {
   }
 }
 
-function loginAs(name) {
+function loginAs(token) {
+  // 비밀번호 확인 후 이름 선택 화면 표시
+  showNameSelector();
+}
+
+function showNameSelector() {
   const users = getUsers();
-  if (users.length === 0) {
-    const u = { name, role: 'admin' };
-    saveUsers([u]);
-    currentUser = u;
-  } else {
-    let found = users.find(u => u.name === name);
-    if (!found) {
-      // 미등록 사용자 → 뷰어로 자동 추가
-      found = { name, role: 'viewer' };
-      users.push(found);
-      saveUsers(users);
-    }
-    currentUser = found;
+  // 박현정을 기본 관리자로 초기화 (최초 1회)
+  if (!users.find(u => u.name === '박현정')) {
+    const defaultUsers = [{ name: '박현정', role: 'admin' }];
+    // 기존 사용자 유지하면서 박현정 추가
+    const merged = [{ name: '박현정', role: 'admin' }, ...users.filter(u => u.name !== '박현정')];
+    saveUsers(merged);
   }
+
+  // 이름 선택 팝업 생성
+  const overlay = document.createElement('div');
+  overlay.id = 'name-selector-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;';
+
+  const updatedUsers = getUsers();
+  const userBtns = updatedUsers.map(u => `
+    <button onclick="selectUser('${u.name}')" style="
+      width:100%;padding:12px 16px;margin-bottom:8px;border-radius:20px;
+      border:2px solid ${u.role==='admin'?'#f0a060':'#a8d8f0'};
+      background:${u.role==='admin'?'#fff8f0':'#f0f8ff'};
+      font-size:14px;font-weight:700;cursor:pointer;
+      color:${u.role==='admin'?'#c07000':'#1a5f8a'};
+      display:flex;align-items:center;justify-content:space-between;
+    ">
+      <span>${u.name}</span>
+      <span style="font-size:11px;opacity:.7;">${u.role==='admin'?'✏️ 관리자':'👁️ 조회'}</span>
+    </button>`).join('');
+
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;padding:32px 28px;width:100%;max-width:360px;box-shadow:0 12px 40px rgba(0,0,0,.2);text-align:center;">
+      <div style="font-size:24px;margin-bottom:8px;">👋</div>
+      <div style="font-size:18px;font-weight:800;color:#1a5f8a;margin-bottom:4px;">누구세요?</div>
+      <div style="font-size:12px;color:#888;margin-bottom:20px;">이름을 선택하세요</div>
+      <div style="text-align:left;">${userBtns}</div>
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid #eee;">
+        <div style="font-size:12px;color:#aaa;margin-bottom:8px;">목록에 없으신가요?</div>
+        <div style="display:flex;gap:8px;">
+          <input id="new-name-input" placeholder="이름 입력" style="flex:1;padding:9px 14px;border-radius:20px;border:1.5px solid #cde;font-size:13px;outline:none;">
+          <button onclick="addNewUserAndSelect()" style="padding:9px 14px;border-radius:20px;background:#a8d8f0;border:none;font-size:13px;font-weight:700;color:#1a5f8a;cursor:pointer;">입장</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function selectUser(name) {
+  const overlay = document.getElementById('name-selector-overlay');
+  if (overlay) overlay.remove();
+  const users = getUsers();
+  const found = users.find(u => u.name === name);
+  currentUser = found || { name, role: 'viewer' };
+  applyUserUI();
+  loadData();
+}
+
+function addNewUserAndSelect() {
+  const name = document.getElementById('new-name-input').value.trim();
+  if (!name) { alert('이름을 입력하세요.'); return; }
+  const users = getUsers();
+  if (!users.find(u => u.name === name)) {
+    users.push({ name, role: 'viewer' });
+    saveUsers(users);
+  }
+  selectUser(name);
+}
+
+function applyUserUI() {
   document.getElementById('user-display').textContent = currentUser.name;
   const rb = document.getElementById('role-display');
   if (isAdmin()) {
@@ -921,8 +977,8 @@ function loginAs(name) {
     document.getElementById('manage-btn').style.display = '';
   } else {
     rb.className = 'role-badge role-viewer'; rb.textContent = '👁️ 조회';
+    document.getElementById('manage-btn').style.display = 'none';
   }
-  loadData();
 }
 
 function doLogout() {
@@ -930,6 +986,9 @@ function doLogout() {
   document.getElementById('pw-input').value = '';
   document.getElementById('main-app').classList.add('hidden');
   document.getElementById('login-page').style.display = 'flex';
+  // 이름 선택 오버레이 제거
+  const ov = document.getElementById('name-selector-overlay');
+  if (ov) ov.remove();
 }
 
 function isAdmin() { return currentUser && currentUser.role === 'admin'; }
@@ -969,28 +1028,55 @@ async function loadData() {
 }
 
 function parseSheetData(rows) {
-  // rows: [[카테고리, name, price, code, image_note, models, image_path], ...]
-  // 첫 행은 헤더
+  // 헤더행으로 컬럼 인덱스 자동 감지 (빈 열 있어도 안전)
+  const header = rows[0].map(h => String(h || '').toLowerCase().trim());
+  const idx = {
+    cat:   Math.max(header.indexOf('카테고리'), 0),
+    name:  findCol(header, ['name','품명']),
+    price: findCol(header, ['price','가격']),
+    code:  findCol(header, ['code','자재코드']),
+    note:  findCol(header, ['image_note','자재실전달내용','이미지']),
+    models:findCol(header, ['models','사용모델','적용모델']),
+    path:  findCol(header, ['image_path','이미지경로']),
+  };
+
   const result = {};
   for (let i = 1; i < rows.length; i++) {
-    const r = rows[i];
-    const cat  = (r[0] || '기타').trim();
+    const r   = rows[i];
+    const cat = (idx.cat >= 0 ? r[idx.cat] : r[0] || '기타').toString().trim();
+    const nm  = idx.name  >= 0 ? r[idx.name].toString().trim()  : '';
+    if (!nm) continue;
+
+    const rawPrice = idx.price >= 0 ? r[idx.price] : '';
+    const priceStr = rawPrice !== null && rawPrice !== '' ? String(rawPrice).replace(/,/g,'').trim() : '';
+
     const item = {
-      name:       (r[1] || '').trim(),
-      price:      (r[2] || '').toString().trim(),
-      code:       (r[3] || '').trim(),
-      image_note: (r[4] || '').trim(),
-      models:     (r[5] || '').trim(),
-      image_path: (r[6] || '').trim(),
-      _row:       i + 1,  // 시트 행 번호 (1-indexed, 헤더 포함)
+      name:       nm,
+      price:      priceStr,
+      code:       idx.code   >= 0 ? r[idx.code].toString().trim()   : '',
+      image_note: idx.note   >= 0 ? r[idx.note].toString().trim()   : '',
+      models:     idx.models >= 0 ? r[idx.models].toString().trim() : '',
+      image_path: idx.path   >= 0 ? r[idx.path].toString().trim()   : '',
+      _row:       i + 1,
     };
-    if (!item.name) continue;
     if (!result[cat]) result[cat] = [];
     result[cat].push(item);
   }
-  // 캐시 저장
   try { localStorage.setItem('mat_db_cache', JSON.stringify(result)); } catch(e) {}
   return result;
+}
+
+function findCol(header, candidates) {
+  for (const c of candidates) {
+    const i = header.indexOf(c);
+    if (i >= 0) return i;
+  }
+  // 부분 매칭
+  for (const c of candidates) {
+    const i = header.findIndex(h => h.includes(c));
+    if (i >= 0) return i;
+  }
+  return -1;
 }
 
 /* ══════════════════════════════════════
@@ -1126,7 +1212,7 @@ function renderResults(results, kw, filters) {
         ${item.models ? `<div class="item-models">${hlText(item.models, kw)}</div>` : '<div class="item-models" style="color:#ccc;">-</div>'}
         ${imgCnt > 0 ? `<span class="img-count-chip">🖼️ ${imgCnt}</span>` : ''}
       </td>
-      <td style="white-space:nowrap;">${item.price ? Number(item.price.replace(/,/g,'')).toLocaleString() + '원' : '-'}</td>
+      <td style="white-space:nowrap;">${formatPrice(item.price)}</td>
       <td style="font-size:12px;color:#777;">${esc(item.code || '-')}</td>
       <td>${statusBadge(status)}</td>
       <td><span class="sheet-cell">${esc(item._cat)}</span></td>`;
@@ -1815,6 +1901,12 @@ function hlText(text, kw) {
     new RegExp(`(${kw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'),
     '<mark style="background:#fff3cd;border-radius:2px;">$1</mark>'
   );
+}
+function formatPrice(p) {
+  if (!p || p === '' || p === 'undefined' || p === 'null') return '-';
+  const n = Number(String(p).replace(/[^0-9.-]/g, ''));
+  if (isNaN(n)) return p + '원';
+  return n.toLocaleString() + '원';
 }
 function showToast(msg) {
   const t = document.getElementById('toast');

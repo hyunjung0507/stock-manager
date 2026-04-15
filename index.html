@@ -205,10 +205,10 @@ a { color: inherit; text-decoration: none; }
 .table-wrap { overflow-x: auto; }
 .result-table { width: 100%; border-collapse: collapse; min-width: 580px; }
 .result-table th { background: var(--sky-lt); color: var(--sky-dk); font-size: 12px; padding: 9px 12px; text-align: left; border-bottom: 2px solid var(--border); }
-.result-table td { padding: 8px 12px; border-bottom: 1px solid #edf5fc; font-size: 13px; vertical-align: top; }
+.result-table td { padding: 6px 10px; border-bottom: 1px solid #edf5fc; font-size: 13px; vertical-align: middle; }
 .result-table tr:hover td { background: #f0f8ff; cursor: pointer; }
 .item-name   { font-weight: 700; color: #1a3a5a; margin-bottom: 2px; }
-.item-models { font-size: 11px; color: #888; line-height: 1.5; max-height: 36px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.item-models { font-size: 11px; color: #888; line-height: 1.4; max-height: 32px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-top:1px; }
 .sheet-cell  { font-size: 11px; color: var(--sky-dk); background: var(--sky-lt); padding: 2px 8px; border-radius: var(--r-pill); white-space: nowrap; }
 .img-count-chip { font-size: 10px; background: var(--sky-lt); color: var(--sky-dk); padding: 1px 6px; border-radius: 10px; }
 
@@ -507,7 +507,7 @@ a { color: inherit; text-decoration: none; }
   <div class="login-card">
     <span class="login-emoji">📦</span>
     <div class="login-title">상담실 자재 관리</div>
-    <div class="login-sub">비밀번호를 입력하세요</div>
+    <div class="login-sub">앱 비밀번호를 입력하세요</div>
     <input id="pw-input" class="login-input" type="password" placeholder="••••"
            maxlength="20" onkeydown="if(event.key==='Enter')doLogin()">
     <div class="login-err" id="login-err">&nbsp;</div>
@@ -766,6 +766,11 @@ a { color: inherit; text-decoration: none; }
         </div>
         <button class="btn btn-mint" onclick="addUser()" style="margin-bottom:16px;">+ 사용자 추가</button>
         <div id="user-list"></div>
+        <div style="margin-top:16px;padding:12px 14px;background:#f5fbff;border-radius:10px;border:1px solid var(--border);font-size:12px;color:var(--sky-dk);line-height:1.8;">
+          🔒 <b>개별 비밀번호 설정</b>: 사용자 목록에서 🔑 버튼 클릭<br>
+          비밀번호 설정 시 이름 선택 후 별도 비밀번호 입력 필요<br>
+          비밀번호 없으면 이름만 클릭해도 바로 입장
+        </div>
       </div>
 
       <!-- 백업 -->
@@ -903,49 +908,94 @@ function loginAs(token) {
 }
 
 function showNameSelector() {
+  // 박현정을 기본 관리자로 초기화
   const users = getUsers();
-  // 박현정을 기본 관리자로 초기화 (최초 1회)
   if (!users.find(u => u.name === '박현정')) {
-    const defaultUsers = [{ name: '박현정', role: 'admin' }];
-    // 기존 사용자 유지하면서 박현정 추가
-    const merged = [{ name: '박현정', role: 'admin' }, ...users.filter(u => u.name !== '박현정')];
-    saveUsers(merged);
+    saveUsers([{ name: '박현정', role: 'admin', pw: '' }, ...users]);
   }
 
-  // 이름 선택 팝업 생성
+  const updatedUsers = getUsers();
   const overlay = document.createElement('div');
   overlay.id = 'name-selector-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;';
 
-  const updatedUsers = getUsers();
-  const userBtns = updatedUsers.map(u => `
-    <button onclick="selectUser('${u.name}')" style="
-      width:100%;padding:12px 16px;margin-bottom:8px;border-radius:20px;
+  const userBtns = updatedUsers.map((u,i) => `
+    <button onclick="trySelectUser(${i})" style="
+      width:100%;padding:11px 16px;margin-bottom:7px;border-radius:14px;
       border:2px solid ${u.role==='admin'?'#f0a060':'#a8d8f0'};
       background:${u.role==='admin'?'#fff8f0':'#f0f8ff'};
-      font-size:14px;font-weight:700;cursor:pointer;
+      font-size:14px;font-weight:700;cursor:pointer;text-align:left;
       color:${u.role==='admin'?'#c07000':'#1a5f8a'};
       display:flex;align-items:center;justify-content:space-between;
     ">
       <span>${u.name}</span>
-      <span style="font-size:11px;opacity:.7;">${u.role==='admin'?'✏️ 관리자':'👁️ 조회'}</span>
+      <span style="font-size:11px;opacity:.7;">${u.role==='admin'?'✏️ 관리자':'👁️ 조회'}${u.pw?'  🔒':''}</span>
     </button>`).join('');
 
   overlay.innerHTML = `
-    <div style="background:#fff;border-radius:20px;padding:32px 28px;width:100%;max-width:360px;box-shadow:0 12px 40px rgba(0,0,0,.2);text-align:center;">
-      <div style="font-size:24px;margin-bottom:8px;">👋</div>
+    <div style="background:#fff;border-radius:20px;padding:28px 24px;width:100%;max-width:380px;max-height:90vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.25);text-align:center;">
+      <div style="font-size:28px;margin-bottom:8px;">👋</div>
       <div style="font-size:18px;font-weight:800;color:#1a5f8a;margin-bottom:4px;">누구세요?</div>
-      <div style="font-size:12px;color:#888;margin-bottom:20px;">이름을 선택하세요</div>
-      <div style="text-align:left;">${userBtns}</div>
-      <div style="margin-top:16px;padding-top:16px;border-top:1px solid #eee;">
+      <div style="font-size:12px;color:#888;margin-bottom:18px;">이름을 선택해 입장하세요</div>
+      <div style="text-align:left;" id="user-btn-list">${userBtns}</div>
+      <!-- 개별 비밀번호 입력 -->
+      <div id="user-pw-box" style="display:none;margin-top:12px;padding:14px;background:#f5fbff;border-radius:12px;border:1.5px solid #a8d8f0;">
+        <div id="user-pw-label" style="font-size:13px;font-weight:700;color:#1a5f8a;margin-bottom:8px;"></div>
+        <div style="display:flex;gap:8px;">
+          <input id="user-pw-input" type="password" placeholder="개인 비밀번호" maxlength="20"
+            style="flex:1;padding:9px 14px;border-radius:20px;border:1.5px solid #a8d8f0;font-size:14px;text-align:center;letter-spacing:4px;outline:none;"
+            onkeydown="if(event.key==='Enter')confirmUserPw()">
+          <button onclick="confirmUserPw()" style="padding:9px 16px;border-radius:20px;background:#5ba3d0;border:none;font-size:13px;font-weight:700;color:#fff;cursor:pointer;">확인</button>
+        </div>
+        <div id="user-pw-err" style="font-size:12px;color:#e05050;margin-top:6px;min-height:16px;"></div>
+        <button onclick="cancelUserPw()" style="margin-top:8px;font-size:12px;color:#aaa;background:none;border:none;cursor:pointer;">← 뒤로</button>
+      </div>
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid #eee;">
         <div style="font-size:12px;color:#aaa;margin-bottom:8px;">목록에 없으신가요?</div>
         <div style="display:flex;gap:8px;">
-          <input id="new-name-input" placeholder="이름 입력" style="flex:1;padding:9px 14px;border-radius:20px;border:1.5px solid #cde;font-size:13px;outline:none;">
+          <input id="new-name-input" placeholder="이름 입력" style="flex:1;padding:9px 14px;border-radius:20px;border:1.5px solid #cde;font-size:13px;outline:none;"
+            onkeydown="if(event.key==='Enter')addNewUserAndSelect()">
           <button onclick="addNewUserAndSelect()" style="padding:9px 14px;border-radius:20px;background:#a8d8f0;border:none;font-size:13px;font-weight:700;color:#1a5f8a;cursor:pointer;">입장</button>
         </div>
       </div>
     </div>`;
   document.body.appendChild(overlay);
+}
+
+let _pendingUserIdx = -1;
+function trySelectUser(idx) {
+  const users = getUsers();
+  const u = users[idx];
+  if (!u) return;
+  if (u.pw) {
+    // 비밀번호 있으면 입력 요구
+    _pendingUserIdx = idx;
+    document.getElementById('user-pw-box').style.display = 'block';
+    document.getElementById('user-pw-label').textContent = u.name + '님의 비밀번호를 입력하세요';
+    document.getElementById('user-pw-input').value = '';
+    document.getElementById('user-pw-err').textContent = '';
+    document.getElementById('user-btn-list').style.display = 'none';
+    setTimeout(() => document.getElementById('user-pw-input').focus(), 100);
+  } else {
+    selectUser(u.name);
+  }
+}
+function confirmUserPw() {
+  const users = getUsers();
+  const u = users[_pendingUserIdx];
+  const input = document.getElementById('user-pw-input').value;
+  if (input === u.pw) {
+    selectUser(u.name);
+  } else {
+    document.getElementById('user-pw-err').textContent = '비밀번호가 틀렸습니다.';
+    document.getElementById('user-pw-input').value = '';
+    setTimeout(() => document.getElementById('user-pw-err').textContent = '', 2000);
+  }
+}
+function cancelUserPw() {
+  _pendingUserIdx = -1;
+  document.getElementById('user-pw-box').style.display = 'none';
+  document.getElementById('user-btn-list').style.display = 'block';
 }
 
 function selectUser(name) {
@@ -1028,52 +1078,66 @@ async function loadData() {
 }
 
 function parseSheetData(rows) {
-  // 헤더행으로 컬럼 인덱스 자동 감지 (빈 열 있어도 안전)
-  const header = rows[0].map(h => String(h || '').toLowerCase().trim());
-  const idx = {
-    cat:   Math.max(header.indexOf('카테고리'), 0),
-    name:  findCol(header, ['name','품명']),
-    price: findCol(header, ['price','가격']),
-    code:  findCol(header, ['code','자재코드']),
-    note:  findCol(header, ['image_note','자재실전달내용','이미지']),
-    models:findCol(header, ['models','사용모델','적용모델']),
-    path:  findCol(header, ['image_path','이미지경로']),
+  if (!rows || rows.length < 2) return {};
+
+  // GAS가 반환하는 형식:
+  // rows[0] = ['카테고리','name','price','code','image_note','models','image_path']
+  // rows[1~] = [시트명, 품명, 가격, 자재코드, image_note, models, image_path]
+  const header = rows[0].map(h => String(h||'').toLowerCase().trim());
+
+  // 헤더명으로 각 컬럼 위치 정확히 찾기
+  const COL = {
+    cat:   colIdx(header, ['카테고리','category']),
+    name:  colIdx(header, ['name','품명']),
+    price: colIdx(header, ['price','가격']),
+    code:  colIdx(header, ['code','자재코드']),
+    note:  colIdx(header, ['image_note','자재실전달내용']),
+    models:colIdx(header, ['models','사용모델','적용모델']),
+    path:  colIdx(header, ['image_path','이미지경로']),
   };
+
+  // 헤더를 못 찾은 경우 GAS 반환 기본 순서로 fallback
+  if (COL.cat < 0)    COL.cat    = 0;
+  if (COL.name < 0)   COL.name   = 1;
+  if (COL.price < 0)  COL.price  = 2;
+  if (COL.code < 0)   COL.code   = 3;
+  if (COL.note < 0)   COL.note   = 4;
+  if (COL.models < 0) COL.models = 5;
+  if (COL.path < 0)   COL.path   = 6;
 
   const result = {};
   for (let i = 1; i < rows.length; i++) {
-    const r   = rows[i];
-    const cat = (idx.cat >= 0 ? r[idx.cat] : r[0] || '기타').toString().trim();
-    const nm  = idx.name  >= 0 ? r[idx.name].toString().trim()  : '';
+    const r = rows[i];
+    const cat = String(r[COL.cat] || '기타').trim();
+    const nm  = String(r[COL.name] || '').trim();
     if (!nm) continue;
 
-    const rawPrice = idx.price >= 0 ? r[idx.price] : '';
-    const priceStr = rawPrice !== null && rawPrice !== '' ? String(rawPrice).replace(/,/g,'').trim() : '';
+    const rawPrice = r[COL.price];
+    const priceStr = (rawPrice !== null && rawPrice !== undefined && rawPrice !== '')
+      ? String(rawPrice).replace(/,/g,'').trim() : '';
 
-    const item = {
+    if (!result[cat]) result[cat] = [];
+    result[cat].push({
       name:       nm,
       price:      priceStr,
-      code:       idx.code   >= 0 ? r[idx.code].toString().trim()   : '',
-      image_note: idx.note   >= 0 ? r[idx.note].toString().trim()   : '',
-      models:     idx.models >= 0 ? r[idx.models].toString().trim() : '',
-      image_path: idx.path   >= 0 ? r[idx.path].toString().trim()   : '',
+      code:       String(r[COL.code]   || '').trim(),
+      image_note: String(r[COL.note]   || '').trim(),
+      models:     String(r[COL.models] || '').trim(),
+      image_path: String(r[COL.path]   || '').trim(),
       _row:       i + 1,
-    };
-    if (!result[cat]) result[cat] = [];
-    result[cat].push(item);
+    });
   }
   try { localStorage.setItem('mat_db_cache', JSON.stringify(result)); } catch(e) {}
   return result;
 }
 
-function findCol(header, candidates) {
-  for (const c of candidates) {
-    const i = header.indexOf(c);
+function colIdx(header, keys) {
+  for (const k of keys) {
+    const i = header.indexOf(k);
     if (i >= 0) return i;
   }
-  // 부분 매칭
-  for (const c of candidates) {
-    const i = header.findIndex(h => h.includes(c));
+  for (const k of keys) {
+    const i = header.findIndex(h => h.includes(k));
     if (i >= 0) return i;
   }
   return -1;
@@ -1207,15 +1271,15 @@ function renderResults(results, kw, filters) {
     const imgCnt = (item.image_path || '').split(',').filter(s => s.trim()).length;
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>
+      <td style="max-width:320px;">
         <div class="item-name">${hlText(item.name || '', kw)}</div>
-        ${item.models ? `<div class="item-models">${hlText(item.models, kw)}</div>` : '<div class="item-models" style="color:#ccc;">-</div>'}
+        ${item.models ? `<div class="item-models">${hlText(item.models, kw)}</div>` : ''}
         ${imgCnt > 0 ? `<span class="img-count-chip">🖼️ ${imgCnt}</span>` : ''}
       </td>
-      <td style="white-space:nowrap;">${formatPrice(item.price)}</td>
-      <td style="font-size:12px;color:#777;">${esc(item.code || '-')}</td>
-      <td>${statusBadge(status)}</td>
-      <td><span class="sheet-cell">${esc(item._cat)}</span></td>`;
+      <td style="white-space:nowrap;min-width:70px;">${formatPrice(item.price)}</td>
+      <td style="font-size:12px;color:#777;min-width:90px;">${esc(item.code || '-')}</td>
+      <td style="min-width:80px;">${statusBadge(status)}</td>
+      <td style="min-width:70px;"><span class="sheet-cell">${esc(item._cat)}</span></td>`;
     tr.onclick = () => openDetail(item);
     tbody.appendChild(tr);
   });
@@ -1295,24 +1359,26 @@ async function buildCarousel(item) {
     return;
   }
 
-  // 로딩 표시
   container.innerHTML = `<div class="img-loading"><div class="spinner"></div></div>`;
 
-  // GAS를 통해 파일명 → 파일 ID 매핑 요청
   let imgUrls = [];
   try {
-    const res  = await fetch(`${CFG.GAS_URL}?action=getImageIds&folder=${CFG.PARTS_FOLDER}&files=${encodeURIComponent(imgPaths.join(','))}`);
+    const res  = await fetch(
+      `${CFG.GAS_URL}?action=getImageIds&folder=${CFG.PARTS_FOLDER}&files=${encodeURIComponent(imgPaths.join(','))}`
+    );
     const json = await res.json();
     if (json.status === 'ok') {
       imgUrls = imgPaths.map(name => {
         const id = json.ids[name];
-        return id ? driveViewUrl(id) : null;
+        // 직접 접근 URL (thumbnail API - CORS 우회)
+        return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w800` : null;
       });
     }
   } catch(e) {
     console.warn('이미지 ID 조회 실패:', e);
   }
 
+  // null 제거 전 원본 유지 (줌용)
   currentImgUrls = imgUrls;
   currentImgIdx  = 0;
   container.innerHTML = buildCarouselHTML(imgUrls, item.name);
@@ -1767,7 +1833,7 @@ function addUser() {
   if (!name) { showToast('이름을 입력하세요.'); return; }
   const users = getUsers();
   if (users.find(u => u.name === name)) { showToast('이미 등록된 이름입니다.'); return; }
-  users.push({ name, role }); saveUsers(users); renderUserList();
+  users.push({ name, role, pw: '' }); saveUsers(users); renderUserList();
   document.getElementById('new-user-name').value = '';
   showToast(`'${name}' 추가됨`);
 }
@@ -1775,15 +1841,30 @@ function renderUserList() {
   const el = document.getElementById('user-list');
   if (!el) return;
   const users = getUsers();
-  if (!users.length) { el.innerHTML = '<div style="font-size:12px;color:#aaa;">등록된 사용자 없음 (첫 접속 시 자동 관리자 등록)</div>'; return; }
+  if (!users.length) { el.innerHTML = '<div style="font-size:12px;color:#aaa;">등록된 사용자 없음</div>'; return; }
   el.innerHTML = users.map((u,i) => `
     <div class="user-row" style="background:${u.role==='admin'?'#fff8f0':'#f0f8ff'}">
-      <div style="display:flex;align-items:center;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;flex:1;">
         <span style="font-size:13px;font-weight:600;">${esc(u.name)}</span>
         <span class="role-badge ${u.role==='admin'?'role-admin':'role-viewer'}">${u.role==='admin'?'✏️ 관리자':'👁️ 뷰어'}</span>
+        ${u.pw ? '<span style="font-size:11px;color:#888;">🔒 비번설정됨</span>' : '<span style="font-size:11px;color:#ccc;">비번없음</span>'}
       </div>
-      <button class="btn btn-sm btn-danger" onclick="removeUser(${i})" ${u.name===currentUser?.name?'disabled':''}>삭제</button>
+      <div style="display:flex;gap:5px;">
+        <button class="btn btn-sm" onclick="setUserPw(${i})" style="font-size:11px;">🔑 비번</button>
+        <button class="btn btn-sm btn-danger" onclick="removeUser(${i})" ${u.name===currentUser?.name?'disabled':''}>삭제</button>
+      </div>
     </div>`).join('');
+}
+
+function setUserPw(idx) {
+  const users = getUsers();
+  const u = users[idx];
+  const newPw = prompt(`[${u.name}] 개인 비밀번호 설정\n(비우면 비밀번호 해제)`);
+  if (newPw === null) return; // 취소
+  users[idx].pw = newPw.trim();
+  saveUsers(users);
+  renderUserList();
+  showToast(newPw.trim() ? `'${u.name}' 비밀번호 설정 완료` : `'${u.name}' 비밀번호 해제`);
 }
 function removeUser(i) {
   const users = getUsers();

@@ -1,0 +1,1949 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>상담실 자재 관리</title>
+<style>
+/* ══════════════════════════════════════
+   CSS 변수 & 리셋
+══════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --sky: #5ba3d0; --sky-dk: #3a7fb0; --sky-lt: #d0eeff; --sky-bg: #eef7ff;
+  --mint: #5bbf8a; --mint-lt: #e0f7ee; --mint-dk: #2e7a55;
+  --peach: #f0a060; --peach-lt: #fff0e0; --peach-dk: #b06020;
+  --lav: #9b7ed4; --lav-lt: #f0ebff; --lav-dk: #5a3a9e;
+  --rose: #e06080; --rose-lt: #ffeef3; --rose-dk: #9e2040;
+  --gray: #7a8898; --gray-lt: #f2f5f8; --border: #c8dff0;
+  --white: #fff; --shadow: 0 3px 12px rgba(70,140,200,.12);
+  --r: 12px; --r-sm: 8px; --r-pill: 20px;
+  /* 상태 색상 */
+  --s-available-bg:#e0f7ee; --s-available-c:#1e6b3a;
+  --s-repairsale-bg:#ede9fe; --s-repairsale-c:#4c2fa0;
+  --s-stockcheck-bg:#fff3cd; --s-stockcheck-c:#8a6000;
+  --s-unknown-bg:#e8e8e8;   --s-unknown-c:#444;
+  --s-repaironly-bg:#dbeafe; --s-repaironly-c:#1a4fa0;
+  --s-discontinued-bg:#fee2e2; --s-discontinued-c:#991b1b;
+}
+body { font-family: 'Malgun Gothic','Apple SD Gothic Neo',sans-serif;
+       background: var(--sky-bg); color: #222; font-size: 14px; }
+button { font-family: inherit; cursor: pointer; }
+input, select, textarea { font-family: inherit; }
+a { color: inherit; text-decoration: none; }
+
+/* ══════════════════════════════════════
+   유틸리티
+══════════════════════════════════════ */
+.hidden { display: none !important; }
+.flex   { display: flex; }
+.flex-c { display: flex; align-items: center; }
+.gap-8  { gap: 8px; }
+.gap-12 { gap: 12px; }
+.w100   { width: 100%; }
+
+/* ══════════════════════════════════════
+   앱 레이아웃
+══════════════════════════════════════ */
+#app { max-width: 1100px; margin: 0 auto; padding: 16px; }
+
+/* ══════════════════════════════════════
+   로그인 화면
+══════════════════════════════════════ */
+#login-page {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #c8e8f8 0%, #b8f0d8 100%);
+}
+.login-card {
+  background: var(--white); border-radius: 24px; padding: 44px 36px;
+  width: 100%; max-width: 380px; box-shadow: 0 12px 40px rgba(70,140,200,.20);
+  text-align: center;
+}
+.login-emoji { font-size: 52px; margin-bottom: 12px; display: block; }
+.login-title { font-size: 22px; font-weight: 800; color: var(--sky-dk); margin-bottom: 6px; }
+.login-sub   { font-size: 13px; color: var(--gray); margin-bottom: 28px; }
+.login-input {
+  width: 100%; padding: 12px 18px; border-radius: var(--r-pill); border: 2px solid var(--border);
+  font-size: 16px; text-align: center; letter-spacing: 6px; outline: none;
+  background: var(--sky-bg); transition: border .15s; margin-bottom: 10px;
+}
+.login-input:focus { border-color: var(--sky); background: var(--white); }
+.login-err { color: var(--rose); font-size: 12px; margin-bottom: 10px;
+             min-height: 18px; transition: opacity .2s; }
+.btn-login {
+  width: 100%; padding: 12px; border-radius: var(--r-pill); border: none;
+  background: linear-gradient(135deg, var(--sky) 0%, var(--mint) 100%);
+  color: var(--white); font-size: 15px; font-weight: 700;
+  box-shadow: 0 4px 12px rgba(91,163,208,.35); transition: transform .15s;
+}
+.btn-login:hover  { transform: translateY(-1px); }
+.btn-login:active { transform: translateY(0); }
+
+/* ══════════════════════════════════════
+   헤더
+══════════════════════════════════════ */
+.app-header {
+  background: linear-gradient(135deg, #a8d8f0 0%, #b0e8d0 100%);
+  padding: 14px 22px; border-radius: 16px; margin-bottom: 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 4px 16px rgba(91,163,208,.18);
+}
+.header-title { font-size: 19px; font-weight: 800; color: #1a5f8a; }
+.header-sub   { font-size: 12px; color: #3a82b0; margin-top: 2px; }
+.header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* ══════════════════════════════════════
+   버튼 시스템
+══════════════════════════════════════ */
+.btn {
+  padding: 7px 16px; border-radius: var(--r-pill); border: 1.5px solid var(--border);
+  background: var(--white); color: #444; font-size: 13px; font-weight: 500;
+  transition: all .15s;
+}
+.btn:hover { background: var(--sky-lt); border-color: var(--sky); }
+.btn-primary { background: var(--sky); color: var(--white); border-color: var(--sky); }
+.btn-primary:hover { background: var(--sky-dk); }
+.btn-mint { background: var(--mint); color: var(--white); border-color: var(--mint); }
+.btn-mint:hover { background: var(--mint-dk); }
+.btn-danger { background: #e05050; color: var(--white); border-color: #e05050; }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+.btn-hdr {
+  background: rgba(255,255,255,.6); color: #1a5f8a;
+  border: 1.5px solid rgba(255,255,255,.8);
+  border-radius: var(--r-pill); padding: 6px 14px;
+  font-size: 12px; font-weight: 600;
+}
+.btn-hdr:hover { background: rgba(255,255,255,.9); }
+.role-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: var(--r-pill); font-size: 11px; font-weight: 700;
+}
+.role-admin  { background: #fff0e0; color: #c07000; }
+.role-viewer { background: var(--sky-lt); color: var(--sky-dk); }
+
+/* ══════════════════════════════════════
+   카드
+══════════════════════════════════════ */
+.card {
+  background: var(--white); border-radius: var(--r); border: 1.5px solid var(--border);
+  padding: 16px 20px; margin-bottom: 14px; box-shadow: var(--shadow);
+}
+
+/* ══════════════════════════════════════
+   뱃지 (상태)
+══════════════════════════════════════ */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: var(--r-pill);
+  font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.badge-available    { background: var(--s-available-bg);   color: var(--s-available-c); }
+.badge-repair_sale  { background: var(--s-repairsale-bg);  color: var(--s-repairsale-c); }
+.badge-stock_check  { background: var(--s-stockcheck-bg);  color: var(--s-stockcheck-c); }
+.badge-unknown      { background: var(--s-unknown-bg);     color: var(--s-unknown-c); }
+.badge-repair_only  { background: var(--s-repaironly-bg);  color: var(--s-repaironly-c); }
+.badge-discontinued { background: var(--s-discontinued-bg);color: var(--s-discontinued-c); }
+
+/* ══════════════════════════════════════
+   검색 & 제품군 선택
+══════════════════════════════════════ */
+.section-title {
+  font-size: 13px; font-weight: 700; color: var(--sky-dk);
+  display: flex; align-items: center; gap: 7px; margin-bottom: 10px;
+}
+.step-badge {
+  background: var(--sky); color: var(--white); border-radius: 50%;
+  width: 22px; height: 22px; display: inline-flex; align-items: center;
+  justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0;
+}
+.cat-search-wrap { position: relative; margin-bottom: 10px; }
+.cat-search-input {
+  width: 100%; padding: 9px 36px 9px 14px; border-radius: var(--r-pill);
+  border: 1.5px solid var(--border); font-size: 13px; outline: none;
+  background: var(--sky-bg); transition: border .15s;
+}
+.cat-search-input:focus { border-color: var(--sky); background: var(--white); }
+.cat-clear {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: #aaa; font-size: 18px; line-height: 1;
+}
+.cat-list-wrap { border: 1.5px solid var(--border); border-radius: var(--r-sm); overflow: hidden; margin-bottom: 10px; background: #f9fdff; }
+.cat-list-hdr  { display: grid; grid-template-columns: 32px 1fr 60px; background: var(--sky-lt); padding: 7px 12px; font-size: 11px; font-weight: 700; color: var(--sky-dk); border-bottom: 1px solid var(--border); }
+.cat-list-body { max-height: 200px; overflow-y: auto; }
+.cat-row { display: grid; grid-template-columns: 32px 1fr 60px; padding: 7px 12px; align-items: center; border-bottom: 1px solid #edf5fc; cursor: pointer; transition: background .1s; }
+.cat-row:last-child { border-bottom: none; }
+.cat-row:hover  { background: #f0f8ff; }
+.cat-row.active { background: var(--sky-lt); }
+.cat-row.hidden { display: none; }
+.cat-check { width: 16px; height: 16px; accent-color: var(--sky); cursor: pointer; }
+.cat-count { font-size: 11px; color: #aaa; text-align: right; }
+.cat-name.matched em { background: #fff3cd; font-style: normal; border-radius: 2px; padding: 0 1px; }
+.selected-chips { display: flex; flex-wrap: wrap; gap: 5px; flex: 1; }
+.selected-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--sky-lt); color: var(--sky-dk);
+  padding: 3px 10px; border-radius: var(--r-pill); font-size: 12px; font-weight: 600;
+}
+.selected-chip button { background: none; border: none; color: var(--sky-dk); font-size: 14px; line-height: 1; }
+.no-result-row { padding: 14px; text-align: center; color: #aaa; font-size: 13px; }
+
+.search-row { display: flex; gap: 8px; }
+.search-input {
+  flex: 1; padding: 10px 16px; border-radius: var(--r-pill);
+  border: 1.5px solid var(--border); font-size: 14px; outline: none;
+  background: var(--sky-bg); transition: border .15s;
+}
+.search-input:focus { border-color: var(--sky); background: var(--white); }
+.divider { height: 1.5px; background: var(--sky-lt); margin: 14px 0; border-radius: 2px; }
+
+/* ══════════════════════════════════════
+   결과 테이블
+══════════════════════════════════════ */
+.result-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+.result-count { font-size: 13px; color: var(--gray); }
+.result-count span { font-weight: 700; color: var(--sky-dk); }
+.table-wrap { overflow-x: auto; }
+.result-table { width: 100%; border-collapse: collapse; min-width: 580px; }
+.result-table th { background: var(--sky-lt); color: var(--sky-dk); font-size: 12px; padding: 9px 12px; text-align: left; border-bottom: 2px solid var(--border); }
+.result-table td { padding: 8px 12px; border-bottom: 1px solid #edf5fc; font-size: 13px; vertical-align: top; }
+.result-table tr:hover td { background: #f0f8ff; cursor: pointer; }
+.item-name   { font-weight: 700; color: #1a3a5a; margin-bottom: 2px; }
+.item-models { font-size: 11px; color: #888; line-height: 1.5; max-height: 36px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.sheet-cell  { font-size: 11px; color: var(--sky-dk); background: var(--sky-lt); padding: 2px 8px; border-radius: var(--r-pill); white-space: nowrap; }
+.img-count-chip { font-size: 10px; background: var(--sky-lt); color: var(--sky-dk); padding: 1px 6px; border-radius: 10px; }
+
+/* ══════════════════════════════════════
+   페이지 전환
+══════════════════════════════════════ */
+.page { display: none; }
+.page.active { display: block; }
+.back-btn {
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  margin-bottom: 14px; padding: 7px 14px; border-radius: var(--r-pill);
+  border: 1.5px solid var(--border); background: var(--sky-lt);
+  color: var(--sky-dk); font-size: 13px; font-weight: 600;
+}
+.back-btn:hover { background: #c0dff5; }
+.empty-state { text-align: center; padding: 50px 20px; color: var(--gray); }
+
+/* ══════════════════════════════════════
+   상세 화면 필드
+══════════════════════════════════════ */
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.field-group { display: flex; flex-direction: column; gap: 4px; }
+.field-label { font-size: 11px; font-weight: 700; color: var(--sky-dk); letter-spacing: .3px; }
+.field-val   { font-size: 13px; color: #333; padding: 8px 12px; background: var(--sky-bg); border-radius: var(--r-sm); border: 1.5px solid var(--border); }
+.field-input {
+  padding: 8px 12px; border-radius: var(--r-sm); border: 1.5px solid var(--border);
+  font-size: 14px; outline: none; width: 100%; background: var(--sky-bg); transition: border .15s;
+}
+.field-input:focus { border-color: var(--sky); background: var(--white); }
+.field-input[readonly] { background: var(--sky-bg); color: #555; }
+.field-textarea {
+  resize: vertical; min-height: 60px; padding: 8px 12px;
+  border-radius: var(--r-sm); border: 1.5px solid var(--border);
+  font-size: 13px; outline: none; width: 100%; background: var(--sky-bg);
+}
+.field-textarea:focus { border-color: var(--sky); background: var(--white); }
+.field-textarea[readonly] { background: var(--sky-bg); color: #555; }
+
+/* ══════════════════════════════════════
+   라디오 상태 (6종)
+══════════════════════════════════════ */
+.radio-group { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.radio-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 14px; border-radius: var(--r-sm); border: 1.5px solid var(--border);
+  cursor: pointer; transition: all .15s; background: #f9fdff;
+}
+.radio-item:hover { border-color: var(--sky); }
+.radio-item.sel-green  { border-color: var(--mint);    background: var(--mint-lt); }
+.radio-item.sel-purple { border-color: var(--lav);     background: var(--lav-lt); }
+.radio-item.sel-amber  { border-color: var(--peach);   background: var(--peach-lt); }
+.radio-item.sel-gray   { border-color: #a0a0a0;        background: #f0f0f0; }
+.radio-item.sel-blue   { border-color: #4080d0;        background: #e8f0ff; }
+.radio-item.sel-red    { border-color: var(--rose);    background: var(--rose-lt); }
+.radio-label { font-size: 13px; font-weight: 700; }
+.radio-desc  { font-size: 10px; color: var(--gray); margin-left: auto; }
+
+/* ══════════════════════════════════════
+   이미지 캐러셀 (슬라이더)
+══════════════════════════════════════ */
+.carousel-wrap {
+  position: relative; border-radius: var(--r); overflow: hidden;
+  background: var(--gray-lt); border: 1.5px solid var(--border);
+  margin-bottom: 8px;
+}
+.carousel-track {
+  display: flex; transition: transform .3s ease; width: 100%;
+}
+.carousel-slide {
+  flex-shrink: 0; width: 100%;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 220px; max-height: 320px; cursor: zoom-in;
+  position: relative;
+}
+.carousel-slide img {
+  max-width: 100%; max-height: 300px; object-fit: contain;
+  border-radius: 6px; transition: transform .2s;
+}
+.carousel-slide img:hover { transform: scale(1.02); }
+.carousel-no-img {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; min-height: 180px; color: #bbb; font-size: 13px;
+}
+.carousel-no-img svg { opacity: .35; }
+.carousel-btn {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(255,255,255,.88); border: 1px solid var(--border);
+  font-size: 16px; display: flex; align-items: center; justify-content: center;
+  z-index: 2; transition: background .15s; box-shadow: 0 2px 6px rgba(0,0,0,.1);
+}
+.carousel-btn:hover  { background: rgba(255,255,255,1); }
+.carousel-btn.prev   { left: 8px; }
+.carousel-btn.next   { right: 8px; }
+.carousel-btn:disabled { opacity: .3; cursor: default; }
+.carousel-dots { display: flex; justify-content: center; gap: 6px; padding: 6px 0; }
+.carousel-dot  {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--border); border: none; transition: background .2s;
+}
+.carousel-dot.active { background: var(--sky); }
+.carousel-counter { position: absolute; bottom: 8px; right: 10px; font-size: 11px; color: #fff; background: rgba(0,0,0,.45); padding: 2px 8px; border-radius: 10px; }
+.img-loading { display: flex; align-items: center; justify-content: center; min-height: 180px; }
+.spinner {
+  width: 32px; height: 32px; border: 3px solid var(--border);
+  border-top-color: var(--sky); border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ══════════════════════════════════════
+   이미지 줌 모달 (전체화면)
+══════════════════════════════════════ */
+.zoom-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.88); z-index: 9000;
+  flex-direction: column; align-items: center; justify-content: center;
+}
+.zoom-overlay.open { display: flex; }
+.zoom-header {
+  width: 100%; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between;
+  background: rgba(0,0,0,.4); flex-shrink: 0;
+}
+.zoom-title { font-size: 14px; font-weight: 700; color: #fff; }
+.zoom-close {
+  background: none; border: none; color: #fff; font-size: 28px;
+  line-height: 1; cursor: pointer; padding: 0 4px;
+}
+.zoom-stage {
+  flex: 1; width: 100%; overflow: hidden; display: flex; align-items: center; justify-content: center;
+  position: relative; cursor: grab;
+}
+.zoom-stage.grabbing { cursor: grabbing; }
+.zoom-img-wrap {
+  transform-origin: center center; transition: transform .15s;
+  user-select: none; -webkit-user-drag: none;
+}
+.zoom-img-wrap img { max-width: 90vw; max-height: 80vh; display: block; object-fit: contain; border-radius: 4px; pointer-events: none; }
+.zoom-controls {
+  display: flex; align-items: center; gap: 10px; padding: 12px 20px;
+  background: rgba(0,0,0,.4); flex-shrink: 0;
+}
+.zoom-ctrl-btn {
+  width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.4);
+  background: rgba(255,255,255,.15); color: #fff; font-size: 18px;
+  display: flex; align-items: center; justify-content: center; transition: background .15s;
+}
+.zoom-ctrl-btn:hover { background: rgba(255,255,255,.3); }
+.zoom-scale-label { color: #fff; font-size: 13px; min-width: 48px; text-align: center; }
+.zoom-nav-row { display: flex; align-items: center; gap: 12px; color: #fff; font-size: 13px; }
+.zoom-nav-btn {
+  padding: 6px 14px; border-radius: var(--r-pill); border: 1.5px solid rgba(255,255,255,.4);
+  background: rgba(255,255,255,.15); color: #fff; font-size: 13px;
+}
+.zoom-nav-btn:hover { background: rgba(255,255,255,.3); }
+
+/* ══════════════════════════════════════
+   참고자료 모달
+══════════════════════════════════════ */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.6); z-index: 8000;
+  align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--white); border-radius: 16px;
+  max-width: 680px; width: 100%; max-height: 88vh;
+  display: flex; flex-direction: column; box-shadow: 0 10px 48px rgba(0,0,0,.3);
+}
+.modal-hdr {
+  padding: 13px 18px; background: var(--sky-lt);
+  display: flex; align-items: center; justify-content: space-between;
+  border-radius: 16px 16px 0 0; flex-shrink: 0;
+}
+.modal-title { font-size: 14px; font-weight: 700; color: var(--sky-dk); }
+.modal-close { background: none; border: none; font-size: 22px; color: var(--sky-dk); cursor: pointer; }
+.modal-body  { flex: 1; overflow-y: auto; padding: 16px; background: #f8f5ff; border-radius: 0 0 16px 16px; }
+.ref-item {
+  background: var(--white); border-radius: 10px; border: 1px solid #e0d8f5;
+  overflow: hidden; margin-bottom: 14px;
+}
+.ref-item-img { width: 100%; max-height: 240px; object-fit: contain; cursor: zoom-in; background: #f8f5ff; display: block; }
+.ref-item-body { padding: 8px 12px; }
+.ref-item-title { font-size: 12px; font-weight: 700; color: var(--lav-dk); margin-bottom: 4px; }
+.ref-item-desc  { font-size: 12px; color: #555; line-height: 1.6; }
+.ref-item-edit  { display: flex; flex-direction: column; gap: 5px; }
+.ref-edit-input {
+  width: 100%; font-size: 12px; font-weight: 700; color: var(--lav-dk);
+  border: none; border-bottom: 1px solid #e0d8f5; padding: 3px 0; background: none; outline: none;
+}
+.ref-edit-ta {
+  width: 100%; font-size: 12px; color: #555;
+  border: 1px solid #e8e0f8; border-radius: 6px; padding: 5px 8px;
+  resize: vertical; min-height: 48px; background: #faf8ff; outline: none;
+}
+.ref-del-btn {
+  margin-top: 4px; font-size: 11px; background: #fee2e2; color: #991b1b;
+  border: none; border-radius: 6px; padding: 3px 8px;
+}
+
+/* ══════════════════════════════════════
+   이력
+══════════════════════════════════════ */
+.history-item {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+  font-size: 12px; padding: 5px 10px; background: var(--sky-bg);
+  border-radius: 8px; border: 1px solid var(--border);
+}
+.h-date  { color: var(--gray); min-width: 80px; }
+.h-field { color: var(--sky-dk); font-weight: 700; }
+.h-old   { color: #c0392b; text-decoration: line-through; }
+.h-new   { color: var(--mint-dk); font-weight: 700; }
+
+/* ══════════════════════════════════════
+   관리 탭
+══════════════════════════════════════ */
+.tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+.tab-btn {
+  padding: 7px 16px; border-radius: var(--r-pill);
+  border: 1.5px solid var(--border); background: var(--sky-bg);
+  color: var(--gray); font-size: 13px; font-weight: 500; transition: all .15s;
+}
+.tab-btn.active { background: var(--sky); color: var(--white); border-color: var(--sky); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* 대량 입력 테이블 */
+.bulk-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+.bulk-table th { background: var(--sky-lt); font-size: 12px; padding: 7px 8px; text-align: left; border: 1px solid var(--border); color: var(--sky-dk); }
+.bulk-table td { padding: 5px 6px; border: 1px solid #e8f5fc; }
+.bulk-table input, .bulk-table select { width: 100%; padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; outline: none; background: var(--sky-bg); }
+.del-row-btn { width: 26px; height: 26px; border-radius: 6px; border: none; background: #fee2e2; color: #991b1b; font-size: 16px; }
+
+/* 날짜 선택 패널 */
+.date-panel {
+  display: flex; align-items: center; gap: 10px; background: var(--sky-bg);
+  border-radius: 8px; padding: 8px 12px; border: 1px solid var(--border);
+  flex-wrap: wrap; font-size: 12px;
+}
+.date-panel label { display: flex; align-items: center; gap: 5px; cursor: pointer; color: var(--sky-dk); font-weight: 600; }
+
+/* ══════════════════════════════════════
+   로딩 & 토스트
+══════════════════════════════════════ */
+.loading-bar {
+  position: fixed; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--sky), var(--mint));
+  z-index: 9999; transform: scaleX(0); transform-origin: left;
+  transition: transform .4s ease; border-radius: 0 2px 2px 0;
+}
+.loading-bar.active { transform: scaleX(.85); }
+.loading-bar.done   { transform: scaleX(1); opacity: 0; transition: transform .2s, opacity .4s .1s; }
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: #333; color: var(--white); padding: 10px 22px;
+  border-radius: var(--r-pill); font-size: 13px; z-index: 9999;
+  opacity: 0; transition: opacity .3s; pointer-events: none; white-space: nowrap;
+}
+.toast.show { opacity: 1; }
+.sync-indicator {
+  font-size: 11px; color: var(--sky-dk); background: var(--sky-lt);
+  padding: 3px 10px; border-radius: var(--r-pill); display: flex; align-items: center; gap: 5px;
+}
+.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--mint); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+
+/* ══════════════════════════════════════
+   백업 & 사용자 관리
+══════════════════════════════════════ */
+.user-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);
+  margin-bottom: 6px;
+}
+
+/* ══════════════════════════════════════
+   반응형
+══════════════════════════════════════ */
+@media (max-width: 600px) {
+  .detail-grid { grid-template-columns: 1fr; }
+  .radio-group  { grid-template-columns: 1fr; }
+  .cat-list-hdr, .cat-row { grid-template-columns: 32px 1fr 50px; }
+}
+</style>
+</head>
+<body>
+
+<div class="loading-bar" id="loading-bar"></div>
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════
+     로그인
+══════════════════════════════════════ -->
+<div id="login-page">
+  <div class="login-card">
+    <span class="login-emoji">📦</span>
+    <div class="login-title">상담실 자재 관리</div>
+    <div class="login-sub">비밀번호를 입력하세요</div>
+    <input id="pw-input" class="login-input" type="password" placeholder="••••"
+           maxlength="20" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="login-err" id="login-err">&nbsp;</div>
+    <button class="btn-login" onclick="doLogin()">입장하기</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     메인 앱
+══════════════════════════════════════ -->
+<div id="main-app" class="hidden">
+<div id="app">
+
+  <!-- 헤더 -->
+  <div class="app-header">
+    <div>
+      <div class="header-title">📦 상담실 자재 관리</div>
+      <div class="header-sub" id="total-info">연결 중...</div>
+    </div>
+    <div class="header-right">
+      <div class="sync-indicator" id="sync-indicator" style="display:none;">
+        <span class="sync-dot"></span> 구글 시트 연동
+      </div>
+      <span class="role-badge" id="role-display"></span>
+      <span style="font-size:13px;color:#1a5f8a;font-weight:600;" id="user-display"></span>
+      <button class="btn-hdr" id="manage-btn" onclick="showPage('manage')" style="display:none;">⚙️ 관리</button>
+      <button class="btn-hdr" onclick="doLogout()">나가기</button>
+    </div>
+  </div>
+
+  <!-- ── 검색 페이지 ── -->
+  <div id="page-search" class="page active">
+    <div class="card">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div class="section-title" style="margin-bottom:0;">
+          <span class="step-badge">1</span>제품군 선택
+          <span style="font-weight:400;font-size:11px;color:#aaa;">(선택 없으면 전체)</span>
+        </div>
+        <button onclick="resetAll()" title="초기화"
+          style="background:none;border:none;font-size:26px;cursor:pointer;border-radius:10px;padding:2px 6px;transition:transform .2s;"
+          onmouseover="this.style.transform='rotate(20deg) scale(1.2)'"
+          onmouseout="this.style.transform=''">🧹</button>
+      </div>
+
+      <div class="cat-search-wrap">
+        <input id="cat-search" class="cat-search-input" placeholder="🔎 제품군 이름 검색..." oninput="filterCats(this.value)">
+        <button class="cat-clear" onclick="clearCatSearch()">×</button>
+      </div>
+      <div class="cat-list-wrap">
+        <div class="cat-list-hdr"><div></div><div>제품군</div><div style="text-align:right;">품목수</div></div>
+        <div class="cat-list-body" id="cat-list-body">
+          <div class="no-result-row">데이터 불러오는 중...</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div class="selected-chips" id="selected-chips">
+          <span style="font-size:12px;color:#bbb;">선택 없음 (전체 검색)</span>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button class="btn btn-sm" onclick="selectAllCats(true)">전체 선택</button>
+          <button class="btn btn-sm" onclick="selectAllCats(false)">전체 해제</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section-title"><span class="step-badge">2</span>검색어 입력</div>
+      <div class="search-row">
+        <input id="search-input" class="search-input" placeholder="모델명 또는 품목명 입력"
+               onkeydown="if(event.key==='Enter')doSearch()">
+        <button class="btn btn-primary" onclick="doSearch()">🔍 검색</button>
+      </div>
+    </div>
+
+    <div id="result-section" class="hidden">
+      <div class="card">
+        <div class="result-hdr">
+          <div class="result-count">검색 결과 <span id="result-count">0</span>건</div>
+          <div id="result-filter-info" style="font-size:12px;color:var(--gray);"></div>
+        </div>
+        <div class="table-wrap">
+          <table class="result-table">
+            <thead><tr>
+              <th style="min-width:160px;">품명 / 사용모델</th>
+              <th style="min-width:80px;">가격</th>
+              <th style="min-width:100px;">자재코드</th>
+              <th style="min-width:80px;">상태</th>
+              <th style="min-width:80px;">제품군</th>
+            </tr></thead>
+            <tbody id="result-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div id="empty-state" class="empty-state hidden">
+      <div style="font-size:36px;margin-bottom:10px;">🔍</div>
+      <div>검색 결과가 없습니다.</div>
+    </div>
+  </div><!-- /page-search -->
+
+  <!-- ── 상세 페이지 ── -->
+  <div id="page-detail" class="page">
+    <button class="back-btn" onclick="showPage('search')">← 목록으로</button>
+    <div class="card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:10px;">
+        <div>
+          <div style="font-size:18px;font-weight:800;color:#1a3a5a;margin-bottom:4px;" id="detail-name"></div>
+          <div style="font-size:12px;color:var(--sky-dk);" id="detail-cat"></div>
+        </div>
+        <div id="detail-status-badge"></div>
+      </div>
+
+      <!-- 이미지 캐러셀 -->
+      <div class="section-title">🖼️ 부품 이미지</div>
+      <div id="carousel-container"></div>
+      <div style="display:flex;gap:6px;margin-bottom:14px;" id="img-action-row">
+        <button class="btn btn-sm" id="img-add-btn" onclick="document.getElementById('img-file-input').click()" style="display:none;">+ 이미지 추가</button>
+      </div>
+      <input type="file" id="img-file-input" accept="image/*" multiple style="display:none;" onchange="addLocalImages(this)">
+
+      <div class="divider"></div>
+
+      <!-- 기본 정보 -->
+      <div class="detail-grid">
+        <div class="field-group">
+          <div class="field-label">가격</div>
+          <input class="field-input" id="d-price" type="text" placeholder="가격 입력" readonly>
+        </div>
+        <div class="field-group">
+          <div class="field-label">자재코드</div>
+          <input class="field-input" id="d-code" placeholder="자재코드" readonly>
+        </div>
+        <div class="field-group" style="grid-column:1/-1;">
+          <div class="field-label">사용모델</div>
+          <textarea class="field-textarea" id="d-models" placeholder="사용모델" readonly style="min-height:54px;font-size:12px;"></textarea>
+        </div>
+        <div class="field-group">
+          <div class="field-label">마지막 수정일</div>
+          <div class="field-val" id="d-modified"></div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">자재실전달내용</div>
+          <input class="field-input" id="d-image-note" placeholder="자재실 전달 내용" readonly>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- 재고 상태 -->
+      <div class="section-title">재고 상태</div>
+      <div class="radio-group" id="status-radio-group">
+        <label class="radio-item" id="r-available"    onclick="selectStatus('available')"><input type="radio" name="status" value="available"><span class="radio-label">✅ 판매가능</span><span class="radio-desc">즉시 판매</span></label>
+        <label class="radio-item" id="r-repair_sale"  onclick="selectStatus('repair_sale')"><input type="radio" name="status" value="repair_sale"><span class="radio-label">🛒 수리+판매</span><span class="radio-desc">수리용·판매도 가능</span></label>
+        <label class="radio-item" id="r-stock_check"  onclick="selectStatus('stock_check')"><input type="radio" name="status" value="stock_check"><span class="radio-label">📦 재고확인</span><span class="radio-desc">수량 확인 필요</span></label>
+        <label class="radio-item" id="r-unknown"      onclick="selectStatus('unknown')"><input type="radio" name="status" value="unknown"><span class="radio-label">❓ 미확인</span><span class="radio-desc">정보 없음</span></label>
+        <label class="radio-item" id="r-repair_only"  onclick="selectStatus('repair_only')"><input type="radio" name="status" value="repair_only"><span class="radio-label">🔧 수리전용</span><span class="radio-desc">판매 불가</span></label>
+        <label class="radio-item" id="r-discontinued" onclick="selectStatus('discontinued')"><input type="radio" name="status" value="discontinued"><span class="radio-label">🚫 단종</span><span class="radio-desc">생산 중단</span></label>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- 참고자료 -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div class="section-title" style="margin-bottom:0;">📚 참고자료</div>
+        <button class="btn btn-sm" style="background:var(--lav-lt);color:var(--lav-dk);border-color:var(--lav);" onclick="showRefModal()">참고자료 보기</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- 메모 -->
+      <div class="section-title">메모</div>
+      <textarea class="field-textarea" id="d-memo" placeholder="메모 입력..." readonly></textarea>
+
+      <div class="divider"></div>
+
+      <!-- 수정 이력 -->
+      <div class="section-title">수정 이력</div>
+      <div id="history-list" style="display:flex;flex-direction:column;gap:4px;">
+        <div style="font-size:12px;color:var(--gray);">수정 이력이 없습니다.</div>
+      </div>
+
+      <div class="divider"></div>
+      <div id="detail-btns" style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn" onclick="showPage('search')">닫기</button>
+      </div>
+    </div>
+  </div><!-- /page-detail -->
+
+  <!-- ── 관리 페이지 ── -->
+  <div id="page-manage" class="page">
+    <button class="back-btn" onclick="showPage('search')">← 검색으로</button>
+    <div class="card">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('tab-add')">➕ 품목 추가</button>
+        <button class="tab-btn" onclick="showTab('tab-bulk')">📋 대량 추가</button>
+        <button class="tab-btn" onclick="showTab('tab-newcat')">🗂️ 제품군 추가</button>
+        <button class="tab-btn" onclick="showTab('tab-users')">👥 사용자</button>
+        <button class="tab-btn" onclick="showTab('tab-backup')">💾 백업</button>
+      </div>
+
+      <!-- 품목 추가 -->
+      <div id="tab-add" class="tab-panel active">
+        <div class="detail-grid">
+          <div class="field-group"><div class="field-label">제품군 *</div><select class="field-input" id="new-cat"><option value="">선택...</option></select></div>
+          <div class="field-group"><div class="field-label">품명 *</div><input class="field-input" id="new-name" placeholder="품명 입력"></div>
+          <div class="field-group"><div class="field-label">가격</div><input class="field-input" id="new-price" placeholder="0"></div>
+          <div class="field-group"><div class="field-label">자재코드</div><input class="field-input" id="new-code" placeholder="없으면 공란"></div>
+          <div class="field-group" style="grid-column:1/-1;"><div class="field-label">사용모델</div><input class="field-input" id="new-models" placeholder="모델명 (쉼표 구분)"></div>
+        </div>
+        <div class="section-title">재고 상태</div>
+        <div class="radio-group" style="margin-bottom:12px;">
+          <label class="radio-item sel-green" id="nr-available"    onclick="selectNewStatus('available')"><input type="radio" name="ns" value="available" checked><span class="radio-label">✅ 판매가능</span></label>
+          <label class="radio-item"           id="nr-repair_sale"  onclick="selectNewStatus('repair_sale')"><input type="radio" name="ns" value="repair_sale"><span class="radio-label">🛒 수리+판매</span></label>
+          <label class="radio-item"           id="nr-stock_check"  onclick="selectNewStatus('stock_check')"><input type="radio" name="ns" value="stock_check"><span class="radio-label">📦 재고확인</span></label>
+          <label class="radio-item"           id="nr-unknown"      onclick="selectNewStatus('unknown')"><input type="radio" name="ns" value="unknown"><span class="radio-label">❓ 미확인</span></label>
+          <label class="radio-item"           id="nr-repair_only"  onclick="selectNewStatus('repair_only')"><input type="radio" name="ns" value="repair_only"><span class="radio-label">🔧 수리전용</span></label>
+          <label class="radio-item"           id="nr-discontinued" onclick="selectNewStatus('discontinued')"><input type="radio" name="ns" value="discontinued"><span class="radio-label">🚫 단종</span></label>
+        </div>
+        <div class="field-group" style="margin-bottom:12px;"><div class="field-label">메모</div><textarea class="field-textarea" id="new-memo" placeholder="메모 (선택)"></textarea></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button class="btn" onclick="clearAddForm()">초기화</button>
+          <button class="btn btn-mint" onclick="saveNewItem()">✅ 저장 → 구글 시트</button>
+        </div>
+      </div>
+
+      <!-- 대량 추가 -->
+      <div id="tab-bulk" class="tab-panel">
+        <div class="field-group" style="margin-bottom:12px;max-width:280px;"><div class="field-label">제품군 *</div><select class="field-input" id="bulk-cat"><option value="">선택...</option></select></div>
+        <div class="table-wrap">
+          <table class="bulk-table">
+            <thead><tr><th style="width:32%">품명 *</th><th style="width:15%">가격</th><th style="width:20%">자재코드</th><th style="width:24%">재고상태</th><th style="width:7%"></th></tr></thead>
+            <tbody id="bulk-body"></tbody>
+          </table>
+        </div>
+        <button class="btn btn-sm" style="width:100%;margin-bottom:12px;border-style:dashed;" onclick="addBulkRow()">+ 행 추가</button>
+        <div style="display:flex;justify-content:flex-end;"><button class="btn btn-mint" onclick="saveBulk()">✅ 전체 저장 → 구글 시트</button></div>
+      </div>
+
+      <!-- 제품군 추가 -->
+      <div id="tab-newcat" class="tab-panel">
+        <div style="max-width:400px;">
+          <div class="field-group" style="margin-bottom:12px;"><div class="field-label">새 제품군 이름 *</div><input class="field-input" id="new-cat-name" placeholder="예: 인덕션"></div>
+          <button class="btn btn-mint" onclick="addNewCategory()">✅ 추가</button>
+        </div>
+      </div>
+
+      <!-- 사용자 관리 -->
+      <div id="tab-users" class="tab-panel">
+        <div style="background:var(--peach-lt);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--peach-dk);line-height:1.7;">
+          ✏️ <b>관리자</b>: 수정·추가·삭제 가능 &nbsp;|&nbsp; 👁️ <b>뷰어</b>: 조회만 가능
+        </div>
+        <div class="detail-grid" style="margin-bottom:12px;">
+          <div class="field-group"><div class="field-label">이름</div><input class="field-input" id="new-user-name" placeholder="이름 입력"></div>
+          <div class="field-group"><div class="field-label">권한</div><select class="field-input" id="new-user-role"><option value="admin">✏️ 관리자</option><option value="viewer">👁️ 뷰어</option></select></div>
+        </div>
+        <button class="btn btn-mint" onclick="addUser()" style="margin-bottom:16px;">+ 사용자 추가</button>
+        <div id="user-list"></div>
+      </div>
+
+      <!-- 백업 -->
+      <div id="tab-backup" class="tab-panel">
+        <div style="background:var(--mint-lt);border-radius:10px;padding:14px;margin-bottom:14px;font-size:13px;color:var(--mint-dk);line-height:1.9;">
+          💾 <b>데이터 저장 위치</b><br>
+          · 재고 상태·메모·수정 이력 → 브라우저 로컬스토리지<br>
+          · 품목 데이터(품명·가격·코드 등) → <b>구글 스프레드시트</b> (실시간 반영)<br>
+          · 이미지 → <b>구글 드라이브</b> 폴더 연동
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;max-width:400px;">
+          <button class="btn btn-primary" onclick="downloadBackup()">📥 로컬 데이터 백업 (.json)</button>
+          <div class="divider"></div>
+          <div class="field-label" style="margin-bottom:4px;">백업 파일 복원</div>
+          <input type="file" id="restore-file" accept=".json" onchange="restoreBackup(this)" style="font-size:12px;">
+          <div style="font-size:11px;color:#c0392b;">⚠️ 복원 시 현재 로컬 데이터를 덮어씁니다.</div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /page-manage -->
+
+</div><!-- /app -->
+</div><!-- /main-app -->
+
+<!-- ══════════════════════════════════════
+     참고자료 모달
+══════════════════════════════════════ -->
+<div class="modal-overlay" id="ref-modal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <span class="modal-title" id="ref-modal-title">📚 참고자료</span>
+      <button class="modal-close" onclick="closeModal('ref-modal')">×</button>
+    </div>
+    <div class="modal-body" id="ref-modal-body"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     이미지 줌 모달
+══════════════════════════════════════ -->
+<div class="zoom-overlay" id="zoom-overlay">
+  <div class="zoom-header">
+    <span class="zoom-title" id="zoom-title">이미지 보기</span>
+    <button class="zoom-close" onclick="closeZoom()">×</button>
+  </div>
+  <div class="zoom-stage" id="zoom-stage"
+       onwheel="zoomWheel(event)"
+       onmousedown="zoomDragStart(event)"
+       onmousemove="zoomDragMove(event)"
+       onmouseup="zoomDragEnd()"
+       onmouseleave="zoomDragEnd()">
+    <div class="zoom-img-wrap" id="zoom-img-wrap">
+      <img id="zoom-img" src="" alt="확대 이미지">
+    </div>
+  </div>
+  <div class="zoom-controls">
+    <button class="zoom-ctrl-btn" onclick="zoomStep(-0.25)" title="축소">−</button>
+    <span class="zoom-scale-label" id="zoom-scale-label">100%</span>
+    <button class="zoom-ctrl-btn" onclick="zoomStep(0.25)" title="확대">+</button>
+    <button class="zoom-ctrl-btn" onclick="zoomReset()" title="원래 크기" style="font-size:14px;">↺</button>
+    <div style="flex:1;"></div>
+    <div class="zoom-nav-row">
+      <button class="zoom-nav-btn" onclick="zoomNav(-1)">◀ 이전</button>
+      <span id="zoom-nav-info" style="font-size:12px;opacity:.7;"></span>
+      <button class="zoom-nav-btn" onclick="zoomNav(1)">다음 ▶</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ══════════════════════════════════════
+   설정
+══════════════════════════════════════ */
+const CFG = {
+  GAS_URL:      'https://script.google.com/macros/s/AKfycbxIaP68xXJpWcZI1QUfA4XHkcWGA_g7HJH46cc3n46a4pEUgub3iGCnSHiYvYCruhQC/exec',
+  SHEET_ID:     '1PVSCbRmt_up1TKLjgL7qqlCgRoWV_EjGvMg2w4z03Eg',
+  PARTS_FOLDER: '1YBC5eUWRz5wy9vfeeKkwH86bbQem1WaX',
+  REF_FOLDER:   '1eBa9IOs9CFSMuV_E89jsJVMa2Hi2P5JJ',
+  PASSWORD:     '1234',
+  EXTRA_KEY:    'mat_extra_v2',
+  USERS_KEY:    'mat_users_v2',
+  REF_KEY:      'mat_ref_v2',
+};
+
+// 구글 드라이브 이미지 URL 생성
+const driveImgUrl = (fileId) =>
+  `https://drive.google.com/thumbnail?id=${fileId}&sz=w600`;
+const driveViewUrl = (fileId) =>
+  `https://lh3.googleusercontent.com/d/${fileId}=w1200`;
+
+/* ══════════════════════════════════════
+   상태 변수
+══════════════════════════════════════ */
+let DB        = {};       // { 제품군: [item,...] }
+let extraData = {};       // { key: {status,memo,modified,history} }
+let refData   = {};       // { sheet: [{src,label,desc},...] }
+let currentItem    = null;
+let currentItemKey = null;
+let currentUser    = null;
+// 이미지 관련
+let currentImgUrls = [];
+let currentImgIdx  = 0;
+// 줌 관련
+let zoomScale = 1, zoomX = 0, zoomY = 0, zoomDragging = false, zoomLast = {};
+
+/* ══════════════════════════════════════
+   로딩 바
+══════════════════════════════════════ */
+const lb = document.getElementById('loading-bar');
+function startLoad() { lb.className='loading-bar active'; }
+function endLoad()   { lb.className='loading-bar done'; setTimeout(()=>lb.className='loading-bar',500); }
+
+/* ══════════════════════════════════════
+   로그인
+══════════════════════════════════════ */
+function doLogin() {
+  const pw = document.getElementById('pw-input').value;
+  if (pw === CFG.PASSWORD) {
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('main-app').classList.remove('hidden');
+    // 이름 입력 모달 (간이)
+    loginAs('__pw_verified__');
+  } else {
+    const err = document.getElementById('login-err');
+    err.textContent = '비밀번호가 올바르지 않습니다.';
+    document.getElementById('pw-input').value = '';
+    setTimeout(() => err.textContent = '\u00a0', 2000);
+  }
+}
+
+function loginAs(token) {
+  // 비밀번호 확인 후 이름 선택 화면 표시
+  showNameSelector();
+}
+
+function showNameSelector() {
+  const users = getUsers();
+  // 박현정을 기본 관리자로 초기화 (최초 1회)
+  if (!users.find(u => u.name === '박현정')) {
+    const defaultUsers = [{ name: '박현정', role: 'admin' }];
+    // 기존 사용자 유지하면서 박현정 추가
+    const merged = [{ name: '박현정', role: 'admin' }, ...users.filter(u => u.name !== '박현정')];
+    saveUsers(merged);
+  }
+
+  // 이름 선택 팝업 생성
+  const overlay = document.createElement('div');
+  overlay.id = 'name-selector-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;';
+
+  const updatedUsers = getUsers();
+  const userBtns = updatedUsers.map(u => `
+    <button onclick="selectUser('${u.name}')" style="
+      width:100%;padding:12px 16px;margin-bottom:8px;border-radius:20px;
+      border:2px solid ${u.role==='admin'?'#f0a060':'#a8d8f0'};
+      background:${u.role==='admin'?'#fff8f0':'#f0f8ff'};
+      font-size:14px;font-weight:700;cursor:pointer;
+      color:${u.role==='admin'?'#c07000':'#1a5f8a'};
+      display:flex;align-items:center;justify-content:space-between;
+    ">
+      <span>${u.name}</span>
+      <span style="font-size:11px;opacity:.7;">${u.role==='admin'?'✏️ 관리자':'👁️ 조회'}</span>
+    </button>`).join('');
+
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;padding:32px 28px;width:100%;max-width:360px;box-shadow:0 12px 40px rgba(0,0,0,.2);text-align:center;">
+      <div style="font-size:24px;margin-bottom:8px;">👋</div>
+      <div style="font-size:18px;font-weight:800;color:#1a5f8a;margin-bottom:4px;">누구세요?</div>
+      <div style="font-size:12px;color:#888;margin-bottom:20px;">이름을 선택하세요</div>
+      <div style="text-align:left;">${userBtns}</div>
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid #eee;">
+        <div style="font-size:12px;color:#aaa;margin-bottom:8px;">목록에 없으신가요?</div>
+        <div style="display:flex;gap:8px;">
+          <input id="new-name-input" placeholder="이름 입력" style="flex:1;padding:9px 14px;border-radius:20px;border:1.5px solid #cde;font-size:13px;outline:none;">
+          <button onclick="addNewUserAndSelect()" style="padding:9px 14px;border-radius:20px;background:#a8d8f0;border:none;font-size:13px;font-weight:700;color:#1a5f8a;cursor:pointer;">입장</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function selectUser(name) {
+  const overlay = document.getElementById('name-selector-overlay');
+  if (overlay) overlay.remove();
+  const users = getUsers();
+  const found = users.find(u => u.name === name);
+  currentUser = found || { name, role: 'viewer' };
+  applyUserUI();
+  loadData();
+}
+
+function addNewUserAndSelect() {
+  const name = document.getElementById('new-name-input').value.trim();
+  if (!name) { alert('이름을 입력하세요.'); return; }
+  const users = getUsers();
+  if (!users.find(u => u.name === name)) {
+    users.push({ name, role: 'viewer' });
+    saveUsers(users);
+  }
+  selectUser(name);
+}
+
+function applyUserUI() {
+  document.getElementById('user-display').textContent = currentUser.name;
+  const rb = document.getElementById('role-display');
+  if (isAdmin()) {
+    rb.className = 'role-badge role-admin'; rb.textContent = '✏️ 관리자';
+    document.getElementById('manage-btn').style.display = '';
+  } else {
+    rb.className = 'role-badge role-viewer'; rb.textContent = '👁️ 조회';
+    document.getElementById('manage-btn').style.display = 'none';
+  }
+}
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('pw-input').value = '';
+  document.getElementById('main-app').classList.add('hidden');
+  document.getElementById('login-page').style.display = 'flex';
+  // 이름 선택 오버레이 제거
+  const ov = document.getElementById('name-selector-overlay');
+  if (ov) ov.remove();
+}
+
+function isAdmin() { return currentUser && currentUser.role === 'admin'; }
+
+/* ══════════════════════════════════════
+   데이터 로드 (구글 시트 GAS)
+══════════════════════════════════════ */
+async function loadData() {
+  startLoad();
+  try {
+    extraData = JSON.parse(localStorage.getItem(CFG.EXTRA_KEY) || '{}');
+    refData   = JSON.parse(localStorage.getItem(CFG.REF_KEY)   || '{}');
+  } catch(e) {}
+
+  try {
+    const url = `${CFG.GAS_URL}?action=getData&sheetId=${CFG.SHEET_ID}`;
+    const res = await fetch(url);
+    const json = await res.json();
+
+    if (json.status === 'ok') {
+      DB = parseSheetData(json.data);
+      document.getElementById('sync-indicator').style.display = 'flex';
+      showToast('✅ 구글 시트 연동 완료');
+    } else {
+      throw new Error(json.message || 'GAS 오류');
+    }
+  } catch(e) {
+    // GAS 연결 실패 시 로컬 캐시 또는 빈 DB
+    const cached = localStorage.getItem('mat_db_cache');
+    if (cached) { try { DB = JSON.parse(cached); showToast('⚠️ 오프라인 — 캐시 데이터 사용'); } catch(e2) {} }
+    else showToast('⚠️ 구글 시트 연결 실패. 네트워크를 확인하세요.');
+    console.warn('loadData error:', e);
+  }
+
+  endLoad();
+  initUI();
+}
+
+function parseSheetData(rows) {
+  // 헤더행으로 컬럼 인덱스 자동 감지 (빈 열 있어도 안전)
+  const header = rows[0].map(h => String(h || '').toLowerCase().trim());
+  const idx = {
+    cat:   Math.max(header.indexOf('카테고리'), 0),
+    name:  findCol(header, ['name','품명']),
+    price: findCol(header, ['price','가격']),
+    code:  findCol(header, ['code','자재코드']),
+    note:  findCol(header, ['image_note','자재실전달내용','이미지']),
+    models:findCol(header, ['models','사용모델','적용모델']),
+    path:  findCol(header, ['image_path','이미지경로']),
+  };
+
+  const result = {};
+  for (let i = 1; i < rows.length; i++) {
+    const r   = rows[i];
+    const cat = (idx.cat >= 0 ? r[idx.cat] : r[0] || '기타').toString().trim();
+    const nm  = idx.name  >= 0 ? r[idx.name].toString().trim()  : '';
+    if (!nm) continue;
+
+    const rawPrice = idx.price >= 0 ? r[idx.price] : '';
+    const priceStr = rawPrice !== null && rawPrice !== '' ? String(rawPrice).replace(/,/g,'').trim() : '';
+
+    const item = {
+      name:       nm,
+      price:      priceStr,
+      code:       idx.code   >= 0 ? r[idx.code].toString().trim()   : '',
+      image_note: idx.note   >= 0 ? r[idx.note].toString().trim()   : '',
+      models:     idx.models >= 0 ? r[idx.models].toString().trim() : '',
+      image_path: idx.path   >= 0 ? r[idx.path].toString().trim()   : '',
+      _row:       i + 1,
+    };
+    if (!result[cat]) result[cat] = [];
+    result[cat].push(item);
+  }
+  try { localStorage.setItem('mat_db_cache', JSON.stringify(result)); } catch(e) {}
+  return result;
+}
+
+function findCol(header, candidates) {
+  for (const c of candidates) {
+    const i = header.indexOf(c);
+    if (i >= 0) return i;
+  }
+  // 부분 매칭
+  for (const c of candidates) {
+    const i = header.findIndex(h => h.includes(c));
+    if (i >= 0) return i;
+  }
+  return -1;
+}
+
+/* ══════════════════════════════════════
+   UI 초기화
+══════════════════════════════════════ */
+function initUI() {
+  const sheets = Object.keys(DB);
+  const total  = Object.values(DB).reduce((s, v) => s + v.length, 0);
+  document.getElementById('total-info').textContent =
+    `${sheets.length}개 제품군 · 총 ${total.toLocaleString()}개 품목`;
+
+  renderCatList(sheets);
+  populateSelects(sheets);
+  document.getElementById('bulk-body').innerHTML = '';
+  for (let i = 0; i < 3; i++) addBulkRow();
+  renderUserList();
+}
+
+/* ══════════════════════════════════════
+   제품군 목록
+══════════════════════════════════════ */
+function renderCatList(sheets) {
+  const body = document.getElementById('cat-list-body');
+  body.innerHTML = '';
+  if (!sheets.length) {
+    body.innerHTML = '<div class="no-result-row">데이터 없음</div>';
+    return;
+  }
+  sheets.forEach(name => {
+    const cnt = (DB[name] || []).length;
+    const div = document.createElement('div');
+    div.className = 'cat-row';
+    div.dataset.sheet = name;
+    div.innerHTML = `
+      <input type="checkbox" class="cat-check" value="${esc(name)}" onchange="onCatChange(this)">
+      <span class="cat-name">${esc(name)}</span>
+      <span class="cat-count">${cnt}건</span>`;
+    div.onclick = e => {
+      if (e.target.classList.contains('cat-check')) return;
+      const cb = div.querySelector('.cat-check');
+      cb.checked = !cb.checked; onCatChange(cb);
+    };
+    body.appendChild(div);
+  });
+}
+
+function onCatChange(cb) {
+  cb.closest('.cat-row').classList.toggle('active', cb.checked);
+  updateChips();
+}
+function updateChips() {
+  const checked = [...document.querySelectorAll('.cat-check:checked')].map(el => el.value);
+  const wrap = document.getElementById('selected-chips');
+  wrap.innerHTML = checked.length === 0
+    ? '<span style="font-size:12px;color:#bbb;">선택 없음 (전체 검색)</span>'
+    : checked.map(n => `<span class="selected-chip">${esc(n)}<button onclick="removeCatChip('${esc(n)}')">×</button></span>`).join('');
+}
+function removeCatChip(name) {
+  const cb = document.querySelector(`.cat-check[value="${CSS.escape(name)}"]`);
+  if (cb) { cb.checked = false; onCatChange(cb); }
+}
+function filterCats(val) {
+  const kw = val.trim().toLowerCase();
+  let vis = 0;
+  document.querySelectorAll('.cat-row').forEach(row => {
+    const name = row.dataset.sheet || '';
+    const match = !kw || name.toLowerCase().includes(kw);
+    row.classList.toggle('hidden', !match);
+    const el = row.querySelector('.cat-name');
+    if (match) {
+      vis++;
+      el.innerHTML = kw
+        ? name.replace(new RegExp(`(${kw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'), '<em>$1</em>')
+        : esc(name);
+      el.classList.toggle('matched', !!kw);
+    }
+  });
+  const body = document.getElementById('cat-list-body');
+  const nr = body.querySelector('.no-result-row');
+  if (vis === 0 && !nr) body.insertAdjacentHTML('beforeend', '<div class="no-result-row">일치하는 제품군 없음</div>');
+  if (vis  > 0 &&  nr) nr.remove();
+}
+function clearCatSearch() { document.getElementById('cat-search').value = ''; filterCats(''); }
+function selectAllCats(v) {
+  document.querySelectorAll('.cat-check').forEach(cb => {
+    if (!cb.closest('.cat-row').classList.contains('hidden')) {
+      cb.checked = v;
+      cb.closest('.cat-row').classList.toggle('active', v);
+    }
+  });
+  updateChips();
+}
+
+/* ══════════════════════════════════════
+   검색
+══════════════════════════════════════ */
+function doSearch() {
+  const kw = document.getElementById('search-input').value.trim().toLowerCase();
+  const checked = [...document.querySelectorAll('.cat-check:checked')].map(el => el.value);
+  const targets = checked.length > 0 ? checked : Object.keys(DB);
+  const results = [];
+  targets.forEach(cat => {
+    (DB[cat] || []).forEach((item, idx) => {
+      const nm = (item.name || '').toLowerCase();
+      const md = (item.models || '').toLowerCase();
+      const cd = (item.code || '').toLowerCase();
+      if (!kw || nm.includes(kw) || md.includes(kw) || cd.includes(kw))
+        results.push({ ...item, _cat: cat, _idx: idx, _key: cat + '::' + idx });
+    });
+  });
+  renderResults(results, kw, checked);
+}
+
+function renderResults(results, kw, filters) {
+  document.getElementById('result-section').classList.toggle('hidden', results.length === 0);
+  document.getElementById('empty-state').classList.toggle('hidden', !(results.length === 0 && (kw || filters.length > 0)));
+  document.getElementById('result-count').textContent = results.length.toLocaleString();
+  const fi = [];
+  if (filters.length > 0) fi.push(`[${filters.slice(0,3).join(', ')}${filters.length>3?` 외 ${filters.length-3}개`:''}]`);
+  if (kw) fi.push(`"${kw}"`);
+  document.getElementById('result-filter-info').textContent = fi.join(' / ');
+
+  const tbody = document.getElementById('result-body');
+  tbody.innerHTML = '';
+  results.slice(0, 300).forEach(item => {
+    const extra  = extraData[item._key] || {};
+    const status = extra.status || 'available';
+    const imgCnt = (item.image_path || '').split(',').filter(s => s.trim()).length;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <div class="item-name">${hlText(item.name || '', kw)}</div>
+        ${item.models ? `<div class="item-models">${hlText(item.models, kw)}</div>` : '<div class="item-models" style="color:#ccc;">-</div>'}
+        ${imgCnt > 0 ? `<span class="img-count-chip">🖼️ ${imgCnt}</span>` : ''}
+      </td>
+      <td style="white-space:nowrap;">${formatPrice(item.price)}</td>
+      <td style="font-size:12px;color:#777;">${esc(item.code || '-')}</td>
+      <td>${statusBadge(status)}</td>
+      <td><span class="sheet-cell">${esc(item._cat)}</span></td>`;
+    tr.onclick = () => openDetail(item);
+    tbody.appendChild(tr);
+  });
+  if (results.length > 300)
+    tbody.insertAdjacentHTML('beforeend', `<tr><td colspan="5" style="text-align:center;color:#aaa;font-size:12px;padding:12px;">상위 300건 표시 — 검색어를 좁혀 보세요</td></tr>`);
+}
+
+/* ══════════════════════════════════════
+   상세 화면
+══════════════════════════════════════ */
+async function openDetail(item) {
+  currentItem    = item;
+  currentItemKey = item._key;
+  const extra = extraData[currentItemKey] || {};
+  const admin = isAdmin();
+
+  document.getElementById('detail-name').textContent        = item.name || '';
+  document.getElementById('detail-cat').textContent         = '📁 ' + item._cat;
+  document.getElementById('d-price').value                  = item.price || '';
+  document.getElementById('d-price').readOnly               = !admin;
+  document.getElementById('d-code').value                   = item.code || '';
+  document.getElementById('d-code').readOnly                = !admin;
+  document.getElementById('d-models').value                 = item.models || '';
+  document.getElementById('d-models').readOnly              = !admin;
+  document.getElementById('d-image-note').value             = item.image_note || '';
+  document.getElementById('d-image-note').readOnly          = !admin;
+  document.getElementById('d-modified').textContent         = extra.modified || '수정 없음';
+  document.getElementById('d-memo').value                   = extra.memo || '';
+  document.getElementById('d-memo').readOnly                = !admin;
+  document.getElementById('img-add-btn').style.display      = admin ? '' : 'none';
+
+  selectStatus(extra.status || 'available');
+  document.getElementById('detail-status-badge').innerHTML  = statusBadge(extra.status || 'available');
+  document.querySelectorAll('#status-radio-group .radio-item').forEach(el => {
+    el.style.pointerEvents = admin ? '' : 'none';
+    el.style.opacity       = admin ? '1' : '.7';
+  });
+
+  // 이미지 로드
+  await buildCarousel(item);
+
+  renderHistory(extra.history || []);
+
+  // 버튼
+  const btns = document.getElementById('detail-btns');
+  if (admin) {
+    btns.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:10px;width:100%;">
+        <div class="date-panel">
+          <label><input type="checkbox" id="hist-use-date" checked onchange="toggleDatePicker(this)"> 수정이력 날짜 기록</label>
+          <label><input type="radio" name="hdt" value="today" checked onchange="setHistDate('today')"> 오늘</label>
+          <label><input type="radio" name="hdt" value="custom" onchange="setHistDate('custom')"> 날짜 지정</label>
+          <input type="date" id="hist-date-val" value="${today()}" style="font-size:12px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;display:none;">
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button class="btn" onclick="showPage('search')">← 뒤로가기</button>
+          <button class="btn btn-primary" onclick="saveDetail()">💾 저장 → 시트</button>
+        </div>
+      </div>`;
+  } else {
+    btns.innerHTML = `<button class="btn" onclick="showPage('search')">← 뒤로가기</button>`;
+  }
+
+  showPage('detail');
+}
+
+/* ══════════════════════════════════════
+   이미지 캐러셀 빌드
+══════════════════════════════════════ */
+async function buildCarousel(item) {
+  const container = document.getElementById('carousel-container');
+  const imgPaths  = (item.image_path || '').split(',').map(s => s.trim()).filter(Boolean);
+
+  if (!imgPaths.length) {
+    currentImgUrls = [];
+    container.innerHTML = renderNoImg();
+    return;
+  }
+
+  // 로딩 표시
+  container.innerHTML = `<div class="img-loading"><div class="spinner"></div></div>`;
+
+  // GAS를 통해 파일명 → 파일 ID 매핑 요청
+  let imgUrls = [];
+  try {
+    const res  = await fetch(`${CFG.GAS_URL}?action=getImageIds&folder=${CFG.PARTS_FOLDER}&files=${encodeURIComponent(imgPaths.join(','))}`);
+    const json = await res.json();
+    if (json.status === 'ok') {
+      imgUrls = imgPaths.map(name => {
+        const id = json.ids[name];
+        return id ? driveViewUrl(id) : null;
+      });
+    }
+  } catch(e) {
+    console.warn('이미지 ID 조회 실패:', e);
+  }
+
+  currentImgUrls = imgUrls;
+  currentImgIdx  = 0;
+  container.innerHTML = buildCarouselHTML(imgUrls, item.name);
+}
+
+function buildCarouselHTML(urls, title) {
+  if (!urls.length) return renderNoImg();
+  const slides = urls.map((url, i) => `
+    <div class="carousel-slide" onclick="openZoom(${i})">
+      ${url
+        ? `<img src="${url}" alt="이미지 ${i+1}" loading="lazy"
+               onerror="this.parentNode.innerHTML=noImgSVG()">`
+        : `<div class="carousel-no-img">${noImgSVG()}<span>이미지 준비 중</span></div>`
+      }
+    </div>`).join('');
+
+  return `
+    <div class="carousel-wrap" id="carousel-wrap">
+      <div class="carousel-track" id="carousel-track" style="transform:translateX(0)">
+        ${slides}
+      </div>
+      ${urls.length > 1 ? `
+        <button class="carousel-btn prev" onclick="carouselNav(-1)" id="car-prev">&#8249;</button>
+        <button class="carousel-btn next" onclick="carouselNav(1)"  id="car-next">&#8250;</button>
+        <div class="carousel-counter" id="car-counter">1 / ${urls.length}</div>` : ''}
+    </div>
+    ${urls.length > 1 ? `<div class="carousel-dots" id="car-dots">${urls.map((_,i)=>`<button class="carousel-dot${i===0?' active':''}" onclick="carouselGo(${i})"></button>`).join('')}</div>` : ''}`;
+}
+
+function renderNoImg() {
+  return `<div class="carousel-wrap" style="min-height:120px;">
+    <div class="carousel-no-img" style="min-height:120px;">${noImgSVG()}<span>이미지 없음</span></div>
+  </div>`;
+}
+function noImgSVG() {
+  return `<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="48" height="48" rx="8" fill="#e8eef5"/>
+    <path d="M14 34l9-12 6 8 4-5 7 9H14z" fill="#c8d8e8"/>
+    <circle cx="17" cy="19" r="3" fill="#c8d8e8"/>
+  </svg>`;
+}
+
+function carouselNav(dir) {
+  const urls = currentImgUrls;
+  if (!urls.length) return;
+  currentImgIdx = (currentImgIdx + dir + urls.length) % urls.length;
+  carouselGo(currentImgIdx);
+}
+function carouselGo(idx) {
+  currentImgIdx = idx;
+  const track = document.getElementById('carousel-track');
+  if (track) track.style.transform = `translateX(-${idx * 100}%)`;
+  const counter = document.getElementById('car-counter');
+  if (counter) counter.textContent = `${idx+1} / ${currentImgUrls.length}`;
+  document.querySelectorAll('.carousel-dot').forEach((d,i) => d.classList.toggle('active', i === idx));
+}
+
+/* ══════════════════════════════════════
+   이미지 줌 모달
+══════════════════════════════════════ */
+function openZoom(idx) {
+  if (!currentImgUrls.length) return;
+  const url = currentImgUrls[idx];
+  if (!url) return;
+  currentImgIdx = idx;
+  document.getElementById('zoom-img').src = url;
+  document.getElementById('zoom-title').textContent = (currentItem?.name || '') + ` — 이미지 ${idx+1}`;
+  zoomReset();
+  updateZoomNav();
+  document.getElementById('zoom-overlay').classList.add('open');
+}
+function closeZoom() {
+  document.getElementById('zoom-overlay').classList.remove('open');
+  zoomReset();
+}
+function zoomNav(dir) {
+  const urls = currentImgUrls;
+  currentImgIdx = (currentImgIdx + dir + urls.length) % urls.length;
+  const url = urls[currentImgIdx];
+  if (url) document.getElementById('zoom-img').src = url;
+  document.getElementById('zoom-title').textContent = (currentItem?.name || '') + ` — 이미지 ${currentImgIdx+1}`;
+  zoomReset();
+  updateZoomNav();
+  carouselGo(currentImgIdx);
+}
+function updateZoomNav() {
+  document.getElementById('zoom-nav-info').textContent = `${currentImgIdx+1} / ${currentImgUrls.length}`;
+}
+function zoomStep(delta) {
+  zoomScale = Math.min(5, Math.max(0.25, zoomScale + delta));
+  applyZoom();
+}
+function zoomWheel(e) {
+  e.preventDefault();
+  zoomStep(e.deltaY < 0 ? 0.15 : -0.15);
+}
+function zoomReset() {
+  zoomScale = 1; zoomX = 0; zoomY = 0;
+  applyZoom();
+}
+function applyZoom() {
+  const wrap = document.getElementById('zoom-img-wrap');
+  wrap.style.transform = `translate(${zoomX}px, ${zoomY}px) scale(${zoomScale})`;
+  document.getElementById('zoom-scale-label').textContent = Math.round(zoomScale*100) + '%';
+}
+function zoomDragStart(e) {
+  if (e.button !== 0) return;
+  zoomDragging = true;
+  zoomLast = { x: e.clientX, y: e.clientY };
+  document.getElementById('zoom-stage').classList.add('grabbing');
+}
+function zoomDragMove(e) {
+  if (!zoomDragging) return;
+  zoomX += e.clientX - zoomLast.x;
+  zoomY += e.clientY - zoomLast.y;
+  zoomLast = { x: e.clientX, y: e.clientY };
+  applyZoom();
+}
+function zoomDragEnd() {
+  zoomDragging = false;
+  document.getElementById('zoom-stage').classList.remove('grabbing');
+}
+
+/* ══════════════════════════════════════
+   로컬 이미지 추가 (직접 업로드)
+══════════════════════════════════════ */
+function addLocalImages(input) {
+  const files = [...input.files];
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      currentImgUrls.push(e.target.result);
+      refreshCarouselFromUrls();
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+function refreshCarouselFromUrls() {
+  document.getElementById('carousel-container').innerHTML =
+    buildCarouselHTML(currentImgUrls, currentItem?.name || '');
+  carouselGo(currentImgUrls.length - 1);
+}
+
+/* ══════════════════════════════════════
+   참고자료 모달
+══════════════════════════════════════ */
+function showRefModal() {
+  if (!currentItem) return;
+  const cat  = currentItem._cat;
+  const refs = refData[cat] || [];
+  document.getElementById('ref-modal-title').textContent = `📚 참고자료 — ${cat}`;
+  renderRefBody(cat, refs);
+  document.getElementById('ref-modal').classList.add('open');
+}
+function renderRefBody(cat, refs) {
+  const admin = isAdmin();
+  const body  = document.getElementById('ref-modal-body');
+  let html = '';
+  if (!refs.length)
+    html = '<div style="text-align:center;padding:24px;color:#aaa;">등록된 참고자료가 없습니다.</div>';
+  else
+    html = refs.map((r,i) => `
+      <div class="ref-item">
+        <img class="ref-item-img" src="${r.src}" loading="lazy"
+             onclick="openZoomRef(${i},'${esc(cat)}')"
+             onerror="this.style.display='none'">
+        <div class="ref-item-body">
+          ${admin ? `
+            <div class="ref-item-edit">
+              <input class="ref-edit-input" value="${esc(r.label||`참고 ${i+1}`)}" placeholder="제목"
+                     onchange="updateRef('${esc(cat)}',${i},'label',this.value)">
+              <textarea class="ref-edit-ta" placeholder="설명 입력"
+                        onchange="updateRef('${esc(cat)}',${i},'desc',this.value)">${esc(r.desc||'')}</textarea>
+              <button class="ref-del-btn" onclick="deleteRef('${esc(cat)}',${i})">삭제</button>
+            </div>` : `
+            <div class="ref-item-title">${esc(r.label||`참고 ${i+1}`)}</div>
+            ${r.desc ? `<div class="ref-item-desc">${esc(r.desc)}</div>` : ''}`}
+        </div>
+      </div>`).join('');
+
+  if (admin)
+    html += `<div style="border-top:1px solid #e0d8f5;padding-top:12px;margin-top:4px;">
+      <div style="font-size:12px;font-weight:700;color:var(--lav-dk);margin-bottom:6px;">+ 참고자료 이미지 추가</div>
+      <input type="file" accept="image/*" multiple onchange="addRefImages(this,'${esc(cat)}')" style="font-size:12px;">
+    </div>`;
+  body.innerHTML = html;
+}
+function openZoomRef(i, cat) {
+  const refs = refData[cat] || [];
+  const urls = refs.map(r => r.src);
+  currentImgUrls = urls; currentImgIdx = i;
+  const url = urls[i];
+  if (!url) return;
+  document.getElementById('zoom-img').src = url;
+  document.getElementById('zoom-title').textContent = refs[i]?.label || `참고자료 ${i+1}`;
+  zoomReset(); updateZoomNav();
+  document.getElementById('zoom-overlay').classList.add('open');
+}
+function addRefImages(input, cat) {
+  const files = [...input.files];
+  if (!refData[cat]) refData[cat] = [];
+  let done = 0;
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      refData[cat].push({ src: e.target.result, label: file.name, desc: '' });
+      done++;
+      if (done === files.length) {
+        saveRef();
+        showToast(`참고자료 ${done}장 추가됨`);
+        renderRefBody(cat, refData[cat]);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+function updateRef(cat, i, field, val) {
+  if (refData[cat]?.[i]) { refData[cat][i][field] = val; saveRef(); }
+}
+function deleteRef(cat, i) {
+  if (!confirm('삭제할까요?')) return;
+  refData[cat].splice(i, 1);
+  saveRef(); showToast('삭제됨');
+  renderRefBody(cat, refData[cat]);
+}
+function saveRef() {
+  try { localStorage.setItem(CFG.REF_KEY, JSON.stringify(refData)); } catch(e) { showToast('저장 공간 부족'); }
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el =>
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); }));
+document.getElementById('zoom-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('zoom-overlay')) closeZoom();
+});
+
+/* ══════════════════════════════════════
+   저장 (GAS 경유 시트 업데이트)
+══════════════════════════════════════ */
+function toggleDatePicker(cb) {
+  document.querySelectorAll('input[name="hdt"]').forEach(r => r.disabled = !cb.checked);
+  document.getElementById('hist-date-val').style.display = 'none';
+}
+function setHistDate(type) {
+  const dv = document.getElementById('hist-date-val');
+  if (type === 'today') { if(dv){dv.value=today();dv.style.display='none';} }
+  else { if(dv){dv.style.display='';dv.focus();} }
+}
+function today() { return new Date().toISOString().split('T')[0]; }
+
+async function saveDetail() {
+  if (!isAdmin()) { showToast('수정 권한이 없습니다.'); return; }
+  const key   = currentItemKey;
+  const extra = extraData[key] || {};
+  const useDate = document.getElementById('hist-use-date')?.checked;
+  const saveDate = useDate ? (document.getElementById('hist-date-val')?.value || today()) : null;
+
+  const newPrice = document.getElementById('d-price').value.trim();
+  const newCode  = document.getElementById('d-code').value.trim();
+  const newModels = document.getElementById('d-models').value.trim();
+  const newNote  = document.getElementById('d-image-note').value.trim();
+  const newStatus = document.querySelector('input[name="status"]:checked')?.value || 'available';
+  const newMemo  = document.getElementById('d-memo').value.trim();
+
+  const labels = {available:'판매가능',repair_sale:'수리+판매',stock_check:'재고확인',unknown:'미확인',repair_only:'수리전용',discontinued:'단종'};
+  const history = extra.history || [];
+  const track = (field, oldV, newV) => {
+    if (oldV !== newV) {
+      const h = { field, old: oldV, new: newV };
+      if (saveDate) h.date = saveDate;
+      history.push(h);
+    }
+  };
+
+  track('가격',    String(currentItem.price||''),      newPrice);
+  track('코드',    String(currentItem.code||''),       newCode);
+  track('모델',    String(currentItem.models||'').substring(0,30), newModels.substring(0,30));
+  track('상태',    labels[extra.status||'available'],  labels[newStatus]);
+
+  // 로컬 DB 업데이트
+  const arr = DB[currentItem._cat];
+  if (arr?.[currentItem._idx]) {
+    arr[currentItem._idx].price      = newPrice;
+    arr[currentItem._idx].code       = newCode;
+    arr[currentItem._idx].models     = newModels;
+    arr[currentItem._idx].image_note = newNote;
+  }
+
+  extraData[key] = { ...extra, status: newStatus, memo: newMemo, modified: saveDate || today(), history };
+  saveExtra();
+  document.getElementById('d-modified').textContent = saveDate || today();
+  document.getElementById('detail-status-badge').innerHTML = statusBadge(newStatus);
+  renderHistory(history);
+
+  // GAS 경유 시트 업데이트
+  startLoad();
+  try {
+    const payload = {
+      action: 'updateRow',
+      sheetId: CFG.SHEET_ID,
+      row: currentItem._row,
+      data: {
+        price: newPrice, code: newCode,
+        models: newModels, image_note: newNote,
+      }
+    };
+    const res  = await fetch(CFG.GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+    if (json.status === 'ok') showToast('💾 저장 완료 (구글 시트 반영)');
+    else throw new Error(json.message);
+  } catch(e) {
+    showToast('⚠️ 시트 반영 실패 — 로컬에만 저장됨');
+    console.warn('saveDetail GAS error:', e);
+  }
+  endLoad();
+}
+
+/* ══════════════════════════════════════
+   품목 추가 (GAS 경유)
+══════════════════════════════════════ */
+async function saveNewItem() {
+  const cat  = document.getElementById('new-cat').value;
+  const name = document.getElementById('new-name').value.trim();
+  if (!cat || !name) { showToast('제품군과 품명은 필수입니다.'); return; }
+
+  const item = {
+    category: cat,
+    name,
+    price:  document.getElementById('new-price').value.trim(),
+    code:   document.getElementById('new-code').value.trim(),
+    models: document.getElementById('new-models').value.trim(),
+    image_note: '',
+    image_path: '',
+  };
+
+  startLoad();
+  try {
+    const res  = await fetch(CFG.GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'addRow', sheetId: CFG.SHEET_ID, data: item }),
+    });
+    const json = await res.json();
+    if (json.status !== 'ok') throw new Error(json.message);
+
+    const status = document.querySelector('input[name="ns"]:checked')?.value || 'available';
+    const memo   = document.getElementById('new-memo').value.trim();
+    const newIdx = (DB[cat] || []).length;
+    if (!DB[cat]) DB[cat] = [];
+    DB[cat].push({ ...item, _row: json.newRow });
+    extraData[`${cat}::${newIdx}`] = { status, memo, modified: today(), history: [] };
+    saveExtra();
+
+    showToast(`'${name}' 추가됨 ✅`);
+    clearAddForm();
+    updateCounts();
+  } catch(e) {
+    showToast('⚠️ 추가 실패: ' + e.message);
+  }
+  endLoad();
+}
+
+/* ══════════════════════════════════════
+   대량 추가
+══════════════════════════════════════ */
+function addBulkRow() {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" placeholder="품명"></td>
+    <td><input type="text" placeholder="0"></td>
+    <td><input type="text" placeholder="코드"></td>
+    <td><select>
+      <option value="available">✅ 판매가능</option>
+      <option value="repair_sale">🛒 수리+판매</option>
+      <option value="stock_check">📦 재고확인</option>
+      <option value="unknown">❓ 미확인</option>
+      <option value="repair_only">🔧 수리전용</option>
+      <option value="discontinued">🚫 단종</option>
+    </select></td>
+    <td><button class="del-row-btn" onclick="this.closest('tr').remove()">×</button></td>`;
+  document.getElementById('bulk-body').appendChild(tr);
+}
+async function saveBulk() {
+  const cat = document.getElementById('bulk-cat').value;
+  if (!cat) { showToast('제품군을 선택하세요.'); return; }
+  const rows = [...document.querySelectorAll('#bulk-body tr')];
+  const items = rows.map(tr => {
+    const ins = tr.querySelectorAll('input');
+    const name = ins[0].value.trim();
+    if (!name) return null;
+    return { category: cat, name, price: ins[1].value.trim(), code: ins[2].value.trim(), models: '', image_note: '', image_path: '', status: tr.querySelector('select').value };
+  }).filter(Boolean);
+  if (!items.length) { showToast('입력된 품목이 없습니다.'); return; }
+  startLoad();
+  try {
+    const res  = await fetch(CFG.GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'addRows', sheetId: CFG.SHEET_ID, data: items }),
+    });
+    const json = await res.json();
+    if (json.status !== 'ok') throw new Error(json.message);
+    const d8 = today();
+    items.forEach((it, i) => {
+      const idx = (DB[cat]||[]).length;
+      if (!DB[cat]) DB[cat] = [];
+      DB[cat].push({ ...it, _row: json.newRows?.[i] });
+      extraData[`${cat}::${idx}`] = { status: it.status, modified: d8, history: [] };
+    });
+    saveExtra();
+    showToast(`${items.length}개 추가됨 ✅`);
+    document.getElementById('bulk-body').innerHTML = '';
+    for (let i=0;i<3;i++) addBulkRow();
+    updateCounts();
+  } catch(e) { showToast('⚠️ 실패: ' + e.message); }
+  endLoad();
+}
+
+/* ══════════════════════════════════════
+   제품군 추가
+══════════════════════════════════════ */
+function addNewCategory() {
+  const name = document.getElementById('new-cat-name').value.trim();
+  if (!name) { showToast('이름을 입력하세요.'); return; }
+  if (DB[name] !== undefined) { showToast('이미 존재합니다.'); return; }
+  DB[name] = [];
+  document.getElementById('new-cat-name').value = '';
+  const body = document.getElementById('cat-list-body');
+  const div  = document.createElement('div');
+  div.className = 'cat-row'; div.dataset.sheet = name;
+  div.innerHTML = `<input type="checkbox" class="cat-check" value="${esc(name)}" onchange="onCatChange(this)"><span class="cat-name">${esc(name)}</span><span class="cat-count">0건</span>`;
+  div.onclick = e => { if(e.target.classList.contains('cat-check'))return; const cb=div.querySelector('.cat-check');cb.checked=!cb.checked;onCatChange(cb); };
+  body.appendChild(div);
+  populateSelects(Object.keys(DB));
+  updateCounts();
+  showToast(`'${name}' 추가됨`);
+}
+
+/* ══════════════════════════════════════
+   사용자 관리
+══════════════════════════════════════ */
+function getUsers()    { try { return JSON.parse(localStorage.getItem(CFG.USERS_KEY)||'[]'); } catch(e){return[];} }
+function saveUsers(u)  { localStorage.setItem(CFG.USERS_KEY, JSON.stringify(u)); }
+function addUser() {
+  const name = document.getElementById('new-user-name').value.trim();
+  const role = document.getElementById('new-user-role').value;
+  if (!name) { showToast('이름을 입력하세요.'); return; }
+  const users = getUsers();
+  if (users.find(u => u.name === name)) { showToast('이미 등록된 이름입니다.'); return; }
+  users.push({ name, role }); saveUsers(users); renderUserList();
+  document.getElementById('new-user-name').value = '';
+  showToast(`'${name}' 추가됨`);
+}
+function renderUserList() {
+  const el = document.getElementById('user-list');
+  if (!el) return;
+  const users = getUsers();
+  if (!users.length) { el.innerHTML = '<div style="font-size:12px;color:#aaa;">등록된 사용자 없음 (첫 접속 시 자동 관리자 등록)</div>'; return; }
+  el.innerHTML = users.map((u,i) => `
+    <div class="user-row" style="background:${u.role==='admin'?'#fff8f0':'#f0f8ff'}">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:13px;font-weight:600;">${esc(u.name)}</span>
+        <span class="role-badge ${u.role==='admin'?'role-admin':'role-viewer'}">${u.role==='admin'?'✏️ 관리자':'👁️ 뷰어'}</span>
+      </div>
+      <button class="btn btn-sm btn-danger" onclick="removeUser(${i})" ${u.name===currentUser?.name?'disabled':''}>삭제</button>
+    </div>`).join('');
+}
+function removeUser(i) {
+  const users = getUsers();
+  if (users[i]?.name === currentUser?.name) { showToast('현재 사용자는 삭제 불가'); return; }
+  users.splice(i,1); saveUsers(users); renderUserList(); showToast('삭제됨');
+}
+
+/* ══════════════════════════════════════
+   백업 & 복원
+══════════════════════════════════════ */
+function saveExtra() { try { localStorage.setItem(CFG.EXTRA_KEY, JSON.stringify(extraData)); } catch(e){} }
+function downloadBackup() {
+  const data = { version:'2.0', date: new Date().toISOString(), extra: extraData, ref: refData, users: getUsers() };
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)], { type:'application/json' }));
+  a.download = `자재관리_백업_${today()}.json`;
+  a.click();
+  showToast('📥 백업 다운로드 완료');
+}
+function restoreBackup(input) {
+  const file = input.files[0]; if (!file) return;
+  if (!confirm('복원하면 현재 로컬 데이터를 덮어씁니다. 계속할까요?')) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const d = JSON.parse(e.target.result);
+      if (d.extra)  { extraData = d.extra; saveExtra(); }
+      if (d.ref)    { refData   = d.ref;   saveRef(); }
+      if (d.users)  saveUsers(d.users);
+      showToast('복원 완료 ✅'); renderUserList();
+    } catch(err) { showToast('파일 형식 오류'); }
+  };
+  reader.readAsText(file);
+}
+
+/* ══════════════════════════════════════
+   이력
+══════════════════════════════════════ */
+function renderHistory(history) {
+  const el = document.getElementById('history-list');
+  if (!history?.length) { el.innerHTML = '<div style="font-size:12px;color:var(--gray);">수정 이력이 없습니다.</div>'; return; }
+  el.innerHTML = history.slice().reverse().map(h => `
+    <div class="history-item">
+      ${h.date ? `<span class="h-date">${h.date}</span>` : ''}
+      <span class="h-field">${esc(h.field)}</span>
+      <span class="h-old">${esc(h.old)}</span>
+      <span style="color:#aaa;">→</span>
+      <span class="h-new">${esc(h.new)}</span>
+    </div>`).join('');
+}
+
+/* ══════════════════════════════════════
+   상태 선택
+══════════════════════════════════════ */
+const STATUS_ALL = ['available','repair_sale','stock_check','unknown','repair_only','discontinued'];
+const STATUS_MAP = { available:'sel-green', repair_sale:'sel-purple', stock_check:'sel-amber', unknown:'sel-gray', repair_only:'sel-blue', discontinued:'sel-red' };
+function selectStatus(val) {
+  STATUS_ALL.forEach(s => {
+    const el = document.getElementById('r-'+s);
+    if (!el) return;
+    el.classList.remove(...Object.values(STATUS_MAP));
+    el.querySelector('input').checked = (s === val);
+  });
+  const el = document.getElementById('r-'+val);
+  if (el) el.classList.add(STATUS_MAP[val] || 'sel-green');
+  if (currentItemKey) document.getElementById('detail-status-badge').innerHTML = statusBadge(val);
+}
+function selectNewStatus(val) {
+  STATUS_ALL.forEach(s => {
+    const el = document.getElementById('nr-'+s);
+    if (!el) return;
+    el.classList.remove(...Object.values(STATUS_MAP));
+    el.querySelector('input').checked = (s === val);
+  });
+  const el = document.getElementById('nr-'+val);
+  if (el) el.classList.add(STATUS_MAP[val] || 'sel-green');
+}
+function statusBadge(s) {
+  const map = {
+    available:    ['badge-available',    '✅ 판매가능'],
+    repair_sale:  ['badge-repair_sale',  '🛒 수리+판매'],
+    stock_check:  ['badge-stock_check',  '📦 재고확인'],
+    unknown:      ['badge-unknown',      '❓ 미확인'],
+    repair_only:  ['badge-repair_only',  '🔧 수리전용'],
+    discontinued: ['badge-discontinued', '🚫 단종'],
+  };
+  const [cls, label] = map[s] || map['available'];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+/* ══════════════════════════════════════
+   페이지 & 탭 전환
+══════════════════════════════════════ */
+function showPage(id) {
+  ['search','detail','manage'].forEach(p => document.getElementById('page-'+p).classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function showTab(id) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', ['tab-add','tab-bulk','tab-newcat','tab-users','tab-backup'][i] === id);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === id));
+}
+
+/* ══════════════════════════════════════
+   유틸
+══════════════════════════════════════ */
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function hlText(text, kw) {
+  if (!kw || !text) return esc(text||'');
+  return esc(text).replace(
+    new RegExp(`(${kw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'),
+    '<mark style="background:#fff3cd;border-radius:2px;">$1</mark>'
+  );
+}
+function formatPrice(p) {
+  if (!p || p === '' || p === 'undefined' || p === 'null') return '-';
+  const n = Number(String(p).replace(/[^0-9.-]/g, ''));
+  if (isNaN(n)) return p + '원';
+  return n.toLocaleString() + '원';
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+function resetAll() {
+  document.querySelectorAll('.cat-check').forEach(cb => { cb.checked=false; cb.closest('.cat-row').classList.remove('active'); });
+  updateChips();
+  document.getElementById('search-input').value = '';
+  document.getElementById('cat-search').value   = '';
+  filterCats('');
+  document.getElementById('result-section').classList.add('hidden');
+  document.getElementById('empty-state').classList.add('hidden');
+  showToast('🧹 초기화!');
+}
+function populateSelects(sheets) {
+  ['new-cat','bulk-cat'].forEach(id => {
+    const sel = document.getElementById(id);
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">선택...</option>';
+    sheets.forEach(n => sel.innerHTML += `<option value="${esc(n)}"${n===cur?' selected':''}>${esc(n)}</option>`);
+  });
+}
+function updateCounts() {
+  const total = Object.values(DB).reduce((s,v)=>s+v.length,0);
+  document.getElementById('total-info').textContent = `${Object.keys(DB).length}개 제품군 · 총 ${total.toLocaleString()}개 품목`;
+  document.querySelectorAll('.cat-row').forEach(row => {
+    const el = row.querySelector('.cat-count');
+    if (el) el.textContent = (DB[row.dataset.sheet]||[]).length + '건';
+  });
+}
+function clearAddForm() {
+  ['new-name','new-price','new-code','new-models','new-memo'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('new-cat').value='';
+  selectNewStatus('available');
+}
+</script>
+</body>
+</html>

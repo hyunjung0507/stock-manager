@@ -1079,68 +1079,32 @@ async function loadData() {
 
 function parseSheetData(rows) {
   if (!rows || rows.length < 2) return {};
-
-  // GAS가 반환하는 형식:
+  // GAS v4 반환 형식 (고정):
   // rows[0] = ['카테고리','name','price','code','image_note','models','image_path']
-  // rows[1~] = [시트명, 품명, 가격, 자재코드, image_note, models, image_path]
-  const header = rows[0].map(h => String(h||'').toLowerCase().trim());
-
-  // 헤더명으로 각 컬럼 위치 정확히 찾기
-  const COL = {
-    cat:   colIdx(header, ['카테고리','category']),
-    name:  colIdx(header, ['name','품명']),
-    price: colIdx(header, ['price','가격']),
-    code:  colIdx(header, ['code','자재코드']),
-    note:  colIdx(header, ['image_note','자재실전달내용']),
-    models:colIdx(header, ['models','사용모델','적용모델']),
-    path:  colIdx(header, ['image_path','이미지경로']),
-  };
-
-  // 헤더를 못 찾은 경우 GAS 반환 기본 순서로 fallback
-  if (COL.cat < 0)    COL.cat    = 0;
-  if (COL.name < 0)   COL.name   = 1;
-  if (COL.price < 0)  COL.price  = 2;
-  if (COL.code < 0)   COL.code   = 3;
-  if (COL.note < 0)   COL.note   = 4;
-  if (COL.models < 0) COL.models = 5;
-  if (COL.path < 0)   COL.path   = 6;
-
+  // rows[1~] = [시트명, 품명, 가격, 자재코드, note, models, image_path]
+  // 인덱스:     0       1     2     3         4     5       6
   const result = {};
   for (let i = 1; i < rows.length; i++) {
-    const r = rows[i];
-    const cat = String(r[COL.cat] || '기타').trim();
-    const nm  = String(r[COL.name] || '').trim();
+    const r   = rows[i];
+    const cat = String(r[0] || '기타').trim();
+    const nm  = String(r[1] || '').trim();
     if (!nm) continue;
-
-    const rawPrice = r[COL.price];
+    const rawPrice = r[2];
     const priceStr = (rawPrice !== null && rawPrice !== undefined && rawPrice !== '')
       ? String(rawPrice).replace(/,/g,'').trim() : '';
-
     if (!result[cat]) result[cat] = [];
     result[cat].push({
       name:       nm,
       price:      priceStr,
-      code:       String(r[COL.code]   || '').trim(),
-      image_note: String(r[COL.note]   || '').trim(),
-      models:     String(r[COL.models] || '').trim(),
-      image_path: String(r[COL.path]   || '').trim(),
+      code:       String(r[3] || '').trim(),
+      image_note: String(r[4] || '').trim(),
+      models:     String(r[5] || '').trim(),
+      image_path: String(r[6] || '').trim(),
       _row:       i + 1,
     });
   }
   try { localStorage.setItem('mat_db_cache', JSON.stringify(result)); } catch(e) {}
   return result;
-}
-
-function colIdx(header, keys) {
-  for (const k of keys) {
-    const i = header.indexOf(k);
-    if (i >= 0) return i;
-  }
-  for (const k of keys) {
-    const i = header.findIndex(h => h.includes(k));
-    if (i >= 0) return i;
-  }
-  return -1;
 }
 
 /* ══════════════════════════════════════
